@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use Illuminate\Support\Facades\Request;
+use Illuminate\Http\Request; // instead of Facade
 
 /*
 |--------------------------------------------------------------------------
