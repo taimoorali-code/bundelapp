@@ -59,7 +59,7 @@ public function searchProducts(Request $request)
 public function store(Request $request)
 {
     try {
-        // Common validation first
+        // Validation
         $rules = [
             'title' => 'nullable|string|max:255',
             'bundle_type' => 'required|in:all,specific',
@@ -68,41 +68,47 @@ public function store(Request $request)
             'discounts.*.discount_value' => 'required|numeric|min:0',
         ];
 
-        // Only validate products if specific selected
         if ($request->bundle_type === 'specific') {
             $rules['products'] = 'required|array|min:1';
         }
 
-        $request->validate($rules);
+        $validated = $request->validate($rules);
 
         $shop = Shop::where('shop', $request->shop)->firstOrFail();
 
-        // Create bundle
-        $bundle = Bundle::create([
-            'shop_id' => $shop->id,
-            'title' => $request->title ?? '',
-            'applies_to_all' => $request->bundle_type === 'all',
-        ]);
+        // Agar bundle_type == all → ek hi record banega
+        if ($validated['bundle_type'] === 'all') {
+            $bundle = Bundle::create([
+                'shop_id'            => $shop->id,
+                'title'              => $validated['title'] ?? '',
+                'shopify_product_id' => null, // all products ka case
+            ]);
 
-        // If specific products, attach them
-        if ($request->bundle_type === 'specific' && !empty($request->products)) {
-            foreach ($request->products as $productId) {
-                $bundle->products()->create([
-                    'shopify_product_id' => $productId,
-                ]);
+            foreach ($validated['discounts'] as $discount) {
+                $bundle->discounts()->create($discount);
             }
         }
 
-        // Add discounts
-        foreach ($request->discounts as $discount) {
-            $bundle->discounts()->create($discount);
+        // Agar bundle_type == specific → har product k liye ek record
+        if ($validated['bundle_type'] === 'specific') {
+            foreach ($validated['products'] as $productId) {
+                $bundle = Bundle::create([
+                    'shop_id'            => $shop->id,
+                    'title'              => $validated['title'] ?? '',
+                    'shopify_product_id' => $productId, // sirf product ID store
+                ]);
+
+                foreach ($validated['discounts'] as $discount) {
+                    $bundle->discounts()->create($discount);
+                }
+            }
         }
 
         return redirect()
             ->route('bundle.setup', ['shop' => $request->shop])
             ->with('success', 'Bundle saved successfully!');
     } catch (\Exception $e) {
-        Log::error('Bundle Store Error: ' . $e->getMessage(), [
+        \Log::error('Bundle Store Error: ' . $e->getMessage(), [
             'trace' => $e->getTraceAsString(),
             'shop'  => $request->shop,
             'data'  => $request->all()
@@ -114,6 +120,7 @@ public function store(Request $request)
             ->with('error', 'Something went wrong: ' . $e->getMessage());
     }
 }
+
 
 
 }
