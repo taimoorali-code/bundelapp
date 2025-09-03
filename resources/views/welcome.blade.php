@@ -41,6 +41,7 @@
         <input type="text" id="product-search" class="form-control mb-2" placeholder="Search products...">
         <div id="product-results" class="product-list">
             @foreach($defaultProducts as $product)
+            {{ dd($product) }}
                 <div>
                     <input type="checkbox" name="products[]" value="{{ $product->id }}"> {{ $product->title }}
                 </div>
