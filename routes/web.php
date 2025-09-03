@@ -20,4 +20,5 @@ Route::get('/', function () {
 
 
 Route::get('/install', [AuthController::class, 'install'])->name('shopify.install');
-Route::get('/auth/callback', [AuthController::class, 'callback'])->name('shopify.callback');
+Route::get('/auth/callback', [AuthController::class, 'callback'])->name('auth.callback'); // Your /auth/callback route
+');
