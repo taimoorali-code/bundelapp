@@ -56,18 +56,30 @@ public function searchProducts(Request $request)
         return view('bundles.create');
     }
 
-    public function store(Request $request)
-    {
+  public function store(Request $request)
+{
+    $request->validate([
+        'title' => 'required|string|max:255',
+        'products' => 'required|array|min:1',
+        'discounts' => 'required|array|min:1',
+        'discounts.*.quantity' => 'required|integer|min:1',
+        'discounts.*.discount' => 'required|numeric|min:0'
+    ]);
+
+    $shop = Shop::where('shop', $request->shop)->first();
+
+    foreach ($request->products as $productId) {
         $bundle = Bundle::create([
-            'shop_id' => auth()->user()->id, // current shop
-            'shopify_product_id' => $request->product_id,
+            'shop_id' => $shop->id,
+            'shopify_product_id' => $productId,
             'title' => $request->title,
         ]);
 
         foreach ($request->discounts as $discount) {
             $bundle->discounts()->create($discount);
         }
-
-        return redirect()->route('bundles.index');
     }
+
+    return redirect()->route('bundle.setup')->with('success', 'Bundle(s) saved successfully!');
+}
 }
