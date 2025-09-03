@@ -23,7 +23,7 @@ class BundleController extends Controller
 
     $defaultProducts = $response->json()['products'] ?? [];
 
-    return view('bundle-setup', compact('defaultProducts'));
+    return view('welcome', compact('defaultProducts'));
 }
 
 // AJAX route for product search
