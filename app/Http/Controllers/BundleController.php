@@ -62,8 +62,8 @@ public function searchProducts(Request $request)
         'title' => 'required|string|max:255',
         'products' => 'required|array|min:1',
         'discounts' => 'required|array|min:1',
-        'discounts.*.min_qty' => 'required|integer|min:1',
-        'discounts.*.discount_value' => 'required|numeric|min:0'
+        'discounts.*.min_qty' => 'required',
+        'discounts.*.discount_value' => 'required'
     ]);
 
     $shop = Shop::where('shop', $request->shop)->first();
