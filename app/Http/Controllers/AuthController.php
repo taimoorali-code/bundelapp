@@ -16,14 +16,14 @@ class AuthController extends Controller
     {
         // Shopify SDK ko init karo
         Context::initialize(
-    apiKey: env('SHOPIFY_API_KEY'),
-    apiSecretKey: env('SHOPIFY_API_SECRET'),
-    scopes: explode(',', env('SHOPIFY_API_SCOPES')),
-    hostName: parse_url(env('SHOPIFY_APP_URL'), PHP_URL_HOST),
-    sessionStorage: new FileSessionStorage(storage_path('shopify_sessions')),
-    apiVersion: '2025-01',
-    isEmbeddedApp: true
-);
+            apiKey: env('SHOPIFY_API_KEY'),
+            apiSecretKey: env('SHOPIFY_API_SECRET'),
+            scopes: explode(',', env('SHOPIFY_API_SCOPES')),
+            hostName: parse_url(env('SHOPIFY_APP_URL'), PHP_URL_HOST),
+            sessionStorage: new FileSessionStorage(storage_path('shopify_sessions')),
+            apiVersion: '2025-01',
+            isEmbeddedApp: true
+        );
 
     }
 
@@ -34,9 +34,10 @@ class AuthController extends Controller
 
         $installUrl = OAuth::begin(
             $shop,
-            redirectPath: route('shopify.callback'),
+            redirectPath: '/auth/callback',
             isOnline: false
         );
+
 
         return redirect($installUrl);
     }
