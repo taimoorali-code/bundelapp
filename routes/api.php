@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Models\Bundle;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,3 +18,16 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+
+Route::get('/get-bundle', function (Request $request) {
+    $shop = $request->query('shop');
+    $productId = $request->query('product_id');
+
+    $bundles = Bundle::where('shopify_product_id', $productId)
+        ->with('discounts')
+        ->get();
+
+    return response()->json($bundles);
+});
+
