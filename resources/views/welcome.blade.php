@@ -9,18 +9,34 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            background-color: #f8f9fa;
+            background-color: #f9fafb;
+            font-family: 'Inter', sans-serif;
         }
         .bundle-card {
             max-width: 900px;
-            margin: 50px auto;
+            margin: 40px auto;
             padding: 30px;
-            border-radius: 12px;
+            border-radius: 14px;
             background: #fff;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+        }
+        h2 {
+            font-weight: 600;
+            color: #111827;
+        }
+        label {
+            font-weight: 500;
+            color: #374151;
+        }
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
         }
         .product-list div {
-            margin-bottom: 5px;
+            margin-bottom: 6px;
+        }
+        .remove-discount {
+            font-size: 0.9rem;
         }
     </style>
 </head>
@@ -28,38 +44,37 @@
 <div class="bundle-card">
     <h2 class="mb-4 text-center">Create a Bundle</h2>
 
-    <!-- Success Alert -->
+    <!-- Alerts -->
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
     @if(session('error'))
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        {{ session('error') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-@endif
-
-    
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
 
     <!-- Bundle Form -->
     <form action="{{ route('bundle.store') }}" method="POST">
         @csrf
         <input type="hidden" name="shop" value="{{ request('shop') }}">
+        <input type="hidden" name="bundle_type" id="bundle_type_input" value="all">
 
-        <!-- Bundle Title -->
+        <!-- Title -->
         <div class="mb-3">
             <label for="bundle_title" class="form-label">Bundle Title</label>
-            <input type="text" class="form-control" name="title" id="bundle_title" placeholder="Enter bundle title" required>
+            <input type="text" class="form-control" name="title" id="bundle_title" placeholder="e.g. Buy More & Save" required>
         </div>
 
-        <!-- Bundle Type Selector -->
+        <!-- Bundle Type -->
         <div class="mb-3">
             <label for="bundle_type" class="form-label">Apply Bundle To:</label>
             <select id="bundle_type" class="form-select">
-                <option value="all">All Products</option>
+                <option value="all" selected>All Products</option>
                 <option value="specific">Specific Products</option>
             </select>
         </div>
@@ -74,14 +89,14 @@
                         <input type="checkbox" name="products[]" value="{{ $product['id'] }}"> {{ $product['title'] }}
                     </div>
                 @empty
-                    <p class="text-muted">No products to display. Use the search box to find products.</p>
+                    <p class="text-muted">No products found. Use search above.</p>
                 @endforelse
             </div>
         </div>
 
-        <!-- Bundle Discounts -->
+        <!-- Discounts -->
         <div id="bundle-discounts" class="mt-4">
-            <h5>Bundle Discounts</h5>
+            <h5 class="mb-3">Bundle Discounts</h5>
             <div class="discount-row row g-2 mb-2">
                 <div class="col-md-4">
                     <input type="number" name="discounts[0][min_qty]" class="form-control" placeholder="Buy X" required>
@@ -90,13 +105,13 @@
                     <input type="number" name="discounts[0][discount_value]" class="form-control" placeholder="Save Y%" required>
                 </div>
                 <div class="col-md-4">
-                    <button type="button" class="btn btn-danger remove-discount w-100">Remove</button>
+                    <button type="button" class="btn btn-outline-danger remove-discount w-100">Remove</button>
                 </div>
             </div>
-            <button type="button" id="add-discount" class="btn btn-primary mt-2">Add Another Discount</button>
+            <button type="button" id="add-discount" class="btn btn-outline-primary mt-2">+ Add Discount</button>
         </div>
 
-        <!-- Submit Button -->
+        <!-- Submit -->
         <div class="mt-4 text-center">
             <button type="submit" class="btn btn-success btn-lg">Save Bundle</button>
         </div>
@@ -108,11 +123,14 @@
     // Toggle product selector
     const bundleType = document.getElementById('bundle_type');
     const productSelector = document.getElementById('product-selector');
+    const bundleTypeInput = document.getElementById('bundle_type_input');
     bundleType.addEventListener('change', () => {
-        productSelector.style.display = bundleType.value === 'specific' ? 'block' : 'none';
+        const isSpecific = bundleType.value === 'specific';
+        productSelector.style.display = isSpecific ? 'block' : 'none';
+        bundleTypeInput.value = bundleType.value;
     });
 
-    // Add/Remove Discount Rows
+    // Add/Remove discounts
     let discountIndex = 1;
     const addDiscount = document.getElementById('add-discount');
     const discountContainer = document.getElementById('bundle-discounts');
@@ -127,7 +145,7 @@
                 <input type="number" name="discounts[${discountIndex}][discount_value]" class="form-control" placeholder="Save Y%" required>
             </div>
             <div class="col-md-4">
-                <button type="button" class="btn btn-danger remove-discount w-100">Remove</button>
+                <button type="button" class="btn btn-outline-danger remove-discount w-100">Remove</button>
             </div>
         `;
         discountContainer.appendChild(row);
@@ -142,7 +160,7 @@
     }
     attachRemoveListeners();
 
-    // AJAX product search
+    // AJAX search products
     const searchInput = document.getElementById('product-search');
     const productResults = document.getElementById('product-results');
     let timeout = null;
@@ -159,8 +177,8 @@
                     let html = '';
                     data.forEach(p => {
                         html += `<div>
-                                    <input type="checkbox" name="products[]" value="${p['id']}"> ${p['title']}
-                                 </div>`;
+                            <input type="checkbox" name="products[]" value="${p['id']}"> ${p['title']}
+                        </div>`;
                     });
                     productResults.innerHTML = html;
                 });

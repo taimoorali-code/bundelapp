@@ -59,33 +59,49 @@ public function searchProducts(Request $request)
 public function store(Request $request)
 {
     try {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'products' => 'required|array|min:1',
+        // Common validation first
+        $rules = [
+            'title' => 'nullable|string|max:255',
+            'bundle_type' => 'required|in:all,specific',
             'discounts' => 'required|array|min:1',
             'discounts.*.min_qty' => 'required|integer|min:1',
             'discounts.*.discount_value' => 'required|numeric|min:0',
-        ]);
+        ];
+
+        // Only validate products if specific selected
+        if ($request->bundle_type === 'specific') {
+            $rules['products'] = 'required|array|min:1';
+        }
+
+        $request->validate($rules);
 
         $shop = Shop::where('shop', $request->shop)->firstOrFail();
 
-        foreach ($request->products as $productId) {
-            $bundle = Bundle::create([
-                'shop_id' => $shop->id,
-                'shopify_product_id' => $productId,
-                'title' => $request->title,
-            ]);
+        // Create bundle
+        $bundle = Bundle::create([
+            'shop_id' => $shop->id,
+            'title' => $request->title ?? '',
+            'applies_to_all' => $request->bundle_type === 'all',
+        ]);
 
-            foreach ($request->discounts as $discount) {
-                $bundle->discounts()->create($discount);
+        // If specific products, attach them
+        if ($request->bundle_type === 'specific' && !empty($request->products)) {
+            foreach ($request->products as $productId) {
+                $bundle->products()->create([
+                    'shopify_product_id' => $productId,
+                ]);
             }
+        }
+
+        // Add discounts
+        foreach ($request->discounts as $discount) {
+            $bundle->discounts()->create($discount);
         }
 
         return redirect()
             ->route('bundle.setup', ['shop' => $request->shop])
-            ->with('success', 'Bundle(s) saved successfully!');
+            ->with('success', 'Bundle saved successfully!');
     } catch (\Exception $e) {
-        // Debugging log
         Log::error('Bundle Store Error: ' . $e->getMessage(), [
             'trace' => $e->getTraceAsString(),
             'shop'  => $request->shop,
@@ -98,5 +114,6 @@ public function store(Request $request)
             ->with('error', 'Something went wrong: ' . $e->getMessage());
     }
 }
+
 
 }
