@@ -79,7 +79,7 @@
                     <input type="number" name="discounts[0][min_qty]" class="form-control" placeholder="Buy X" required>
                 </div>
                 <div class="col-md-4">
-                    <input type="number" name="discounts[0][discount]" class="form-control" placeholder="Save Y%" required>
+                    <input type="number" name="discounts[0][discount_value]" class="form-control" placeholder="Save Y%" required>
                 </div>
                 <div class="col-md-4">
                     <button type="button" class="btn btn-danger remove-discount w-100">Remove</button>
@@ -116,7 +116,7 @@
                 <input type="number" name="discounts[${discountIndex}][min_qty]" class="form-control" placeholder="Buy X" required>
             </div>
             <div class="col-md-4">
-                <input type="number" name="discounts[${discountIndex}][discount]" class="form-control" placeholder="Save Y%" required>
+                <input type="number" name="discounts[${discountIndex}][discount_value]" class="form-control" placeholder="Save Y%" required>
             </div>
             <div class="col-md-4">
                 <button type="button" class="btn btn-danger remove-discount w-100">Remove</button>
