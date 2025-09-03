@@ -108,7 +108,7 @@
             <div id="bundle-discounts" class="mt-4">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <h5 class="mb-3">Bundle Discounts</h5>
-                    <button type="button" id="add-discount" class="btn btn-outline-primary mt-2">+ Add
+                    <button type="button" id="add-discount" class="btn btn-outline-primary">+ Add
                         Discount</button>
                 </div>
 
