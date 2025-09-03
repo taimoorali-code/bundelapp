@@ -23,8 +23,8 @@ Route::get('/', function (Request $request) {
     if ($shop && !App\Models\Shop::where('shop', $shop)->exists()) {
         return redirect()->route('install.page', ['shop' => $shop]);
     }
+ return redirect()->route('bundle.setup', ['shop' => $shop]);
 
-    return view('welcome'); // normal landing page for others
 });
 
 Route::get('/install-page', function () {
