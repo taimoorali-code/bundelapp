@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use Illuminate\Support\Facades\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,11 +15,22 @@ use App\Http\Controllers\AuthController;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
+Route::get('/', function (Request $request) {
+    $shop = $request->query('shop');
+
+    // If shop parameter exists and no token in DB
+    if ($shop && !App\Models\Shop::where('shop', $shop)->exists()) {
+        return redirect()->route('install.page', ['shop' => $shop]);
+    }
+
+    return view('welcome'); // normal landing page for others
 });
+
+Route::get('/install-page', function () {
+    return view('install');
+})->name('install.page');
+
 
 
 Route::get('/install', [AuthController::class, 'install'])->name('shopify.install');
 Route::get('/auth/callback', [AuthController::class, 'callback'])->name('auth.callback'); // Your /auth/callback route
-');
