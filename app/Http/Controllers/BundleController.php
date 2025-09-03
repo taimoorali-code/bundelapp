@@ -6,7 +6,7 @@ use App\Models\Bundle;
 use App\Models\Shop;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-
+use Illuminate\Support\Facades\Log;
 
 class BundleController extends Controller
 {
@@ -56,30 +56,47 @@ public function searchProducts(Request $request)
         return view('bundles.create');
     }
 
-  public function store(Request $request)
+public function store(Request $request)
 {
-    $request->validate([
-        'title' => 'required|string|max:255',
-        'products' => 'required|array|min:1',
-        'discounts' => 'required|array|min:1',
-        'discounts.*.min_qty' => 'required',
-        'discounts.*.discount_value' => 'required'
-    ]);
-
-    $shop = Shop::where('shop', $request->shop)->first();
-
-    foreach ($request->products as $productId) {
-        $bundle = Bundle::create([
-            'shop_id' => $shop->id,
-            'shopify_product_id' => $productId,
-            'title' => $request->title,
+    try {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'products' => 'required|array|min:1',
+            'discounts' => 'required|array|min:1',
+            'discounts.*.min_qty' => 'required|integer|min:1',
+            'discounts.*.discount_value' => 'required|numeric|min:0',
         ]);
 
-        foreach ($request->discounts as $discount) {
-            $bundle->discounts()->create($discount);
-        }
-    }
+        $shop = Shop::where('shop', $request->shop)->firstOrFail();
 
-    return redirect()->route('bundle.setup', ['shop' => $request->shop])->with('success', 'Bundle(s) saved successfully!');
+        foreach ($request->products as $productId) {
+            $bundle = Bundle::create([
+                'shop_id' => $shop->id,
+                'shopify_product_id' => $productId,
+                'title' => $request->title,
+            ]);
+
+            foreach ($request->discounts as $discount) {
+                $bundle->discounts()->create($discount);
+            }
+        }
+
+        return redirect()
+            ->route('bundle.setup', ['shop' => $request->shop])
+            ->with('success', 'Bundle(s) saved successfully!');
+    } catch (\Exception $e) {
+        // Debugging log
+        Log::error('Bundle Store Error: ' . $e->getMessage(), [
+            'trace' => $e->getTraceAsString(),
+            'shop'  => $request->shop,
+            'data'  => $request->all()
+        ]);
+
+        return redirect()
+            ->back()
+            ->withInput()
+            ->with('error', 'Something went wrong: ' . $e->getMessage());
+    }
 }
+
 }
