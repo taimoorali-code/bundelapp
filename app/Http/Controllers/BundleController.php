@@ -80,6 +80,6 @@ public function searchProducts(Request $request)
         }
     }
 
-    return redirect()->route('bundle.setup')->with('success', 'Bundle(s) saved successfully!');
+    return redirect()->route('bundle.setup', ['shop' => $request->shop])->with('success', 'Bundle(s) saved successfully!');
 }
 }
