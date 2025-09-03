@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BundleController;
 use Illuminate\Http\Request; // instead of Facade
 
 /*
@@ -30,6 +31,8 @@ Route::get('/install-page', function () {
     return view('install');
 })->name('install.page');
 
+Route::get('/bundle-setup', [BundleController::class, 'showBundleSetup'])->name('bundle.setup');
+Route::get('/search-products', [BundleController::class, 'searchProducts']);
 
 
 Route::get('/install', [AuthController::class, 'install'])->name('shopify.install');
