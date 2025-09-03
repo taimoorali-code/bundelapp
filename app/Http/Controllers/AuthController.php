@@ -37,7 +37,7 @@ class AuthController extends Controller
             redirectPath: '/auth/callback',
             isOnline: false
         );
-
+        dd($installUrl);
 
         return redirect($installUrl);
     }
