@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Shop;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Shopify\Auth\OAuth;
 use Shopify\Clients\OAuth as OAuthClient;
 use Shopify\Context;
@@ -28,37 +30,54 @@ class AuthController extends Controller
     }
 
     // Step 1: Redirect merchant to Shopify install URL
-    public function install(Request $request)
-    {
-        $shop = $request->query('shop'); // e.g. mystore.myshopify.com
+   public function install(Request $request)
+{
+    $shop = $request->query('shop'); // e.g., mystore.myshopify.com
 
-        $installUrl = OAuth::begin(
-            $shop,
-            redirectPath: '/auth/callback',
-            isOnline: false
-        );
-        dd($installUrl);
+    // Generate a random state token for CSRF protection
+    $state = bin2hex(random_bytes(16));
+    // Save it temporarily (e.g., encrypted in Laravel cache or signed cookie)
+    cookie()->queue('oauth_state', $state, 5); // 5 minutes
 
-        return redirect($installUrl);
-    }
+    $scopes = 'write_products,write_discounts';
+    $redirectUri = route('auth.callback'); // Your /auth/callback route
+
+    $installUrl = "https://{$shop}/admin/oauth/authorize?client_id=" . env('SHOPIFY_API_KEY') .
+                  "&scope={$scopes}" .
+                  "&redirect_uri={$redirectUri}" .
+                  "&state={$state}&grant_options[]=per-user";
+
+    return redirect($installUrl);
+}
 
     // Step 2: Shopify redirects back here after auth
-    public function callback(Request $request)
-    {
-        try {
-            $session = OAuth::callback($request->query(), $request->cookie());
+ public function callback(Request $request)
+{
+    $state = $request->query('state');
+    $code = $request->query('code');
+    $shop = $request->query('shop');
 
-            // Access token
-            $accessToken = $session->getAccessToken();
-            $shop = $session->getShop();
-
-            // TODO: Save $shop + $accessToken in DB for later use
-            // Example:
-            // Shop::updateOrCreate(['shop' => $shop], ['token' => $accessToken]);
-
-            return "App installed successfully on {$shop}!";
-        } catch (\Exception $e) {
-            return "OAuth error: " . $e->getMessage();
-        }
+    // Verify state to prevent CSRF
+    if ($state !== $request->cookie('oauth_state')) {
+        abort(403, 'Invalid state');
     }
+
+    // Exchange code for access token
+    $response = Http::asForm()->post("https://{$shop}/admin/oauth/access_token", [
+        'client_id' => env('SHOPIFY_API_KEY'),
+        'client_secret' => env('SHOPIFY_API_SECRET'),
+        'code' => $code,
+    ]);
+
+    $accessToken = $response->json()['access_token'];
+
+    // Save $shop + $accessToken in DB
+    Shop::updateOrCreate(
+        ['shop' => $shop],
+        ['token' => $accessToken]
+    );
+
+    return "App installed successfully on {$shop}!";
+}
+
 }
