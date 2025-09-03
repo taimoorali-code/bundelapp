@@ -62,7 +62,7 @@ public function searchProducts(Request $request)
         'title' => 'required|string|max:255',
         'products' => 'required|array|min:1',
         'discounts' => 'required|array|min:1',
-        'discounts.*.quantity' => 'required|integer|min:1',
+        'discounts.*.min_qty' => 'required|integer|min:1',
         'discounts.*.discount' => 'required|numeric|min:0'
     ]);
 

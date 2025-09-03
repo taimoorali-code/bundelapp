@@ -76,7 +76,7 @@
             <h5>Bundle Discounts</h5>
             <div class="discount-row row g-2 mb-2">
                 <div class="col-md-4">
-                    <input type="number" name="discounts[0][quantity]" class="form-control" placeholder="Buy X" required>
+                    <input type="number" name="discounts[0][min_qty]" class="form-control" placeholder="Buy X" required>
                 </div>
                 <div class="col-md-4">
                     <input type="number" name="discounts[0][discount]" class="form-control" placeholder="Save Y%" required>
@@ -113,7 +113,7 @@
         row.classList.add('discount-row', 'row', 'g-2', 'mb-2');
         row.innerHTML = `
             <div class="col-md-4">
-                <input type="number" name="discounts[${discountIndex}][quantity]" class="form-control" placeholder="Buy X" required>
+                <input type="number" name="discounts[${discountIndex}][min_qty]" class="form-control" placeholder="Buy X" required>
             </div>
             <div class="col-md-4">
                 <input type="number" name="discounts[${discountIndex}][discount]" class="form-control" placeholder="Save Y%" required>
