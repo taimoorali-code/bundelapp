@@ -122,14 +122,17 @@
         // AJAX product search
         const searchInput = document.getElementById('product-search');
         const productResults = document.getElementById('product-results');
+
         let timeout = null;
         searchInput.addEventListener('input', () => {
             clearTimeout(timeout);
             timeout = setTimeout(() => {
                 const query = searchInput.value;
+                const shop = "{{ request('shop') }}"; // get shop from current URL or Blade variable
+
                 if (query.length < 2) return;
 
-                fetch(`/search-products?q=${query}`)
+                fetch(`/search-products?q=${query}&shop=${shop}`)
                     .then(res => res.json())
                     .then(data => {
                         let html = '';
