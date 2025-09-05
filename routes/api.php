@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BundleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Models\Bundle;
@@ -18,6 +19,7 @@ use App\Models\Bundle;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+Route::post('/create-draft-order', [BundleController::class, 'createDraftOrder']);
 
 
 Route::get('/get-bundle', function (Request $request) {
