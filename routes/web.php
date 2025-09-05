@@ -38,3 +38,5 @@ Route::post('/bundles', [BundleController::class, 'store'])->name('bundle.store'
 
 Route::get('/install', [AuthController::class, 'install'])->name('shopify.install');
 Route::get('/auth/callback', [AuthController::class, 'callback'])->name('auth.callback'); // Your /auth/callback route
+// routes/web.php
+Route::get('/apps/bundle-checkout', [BundleController::class, 'checkout'])->name('bundle.checkout');

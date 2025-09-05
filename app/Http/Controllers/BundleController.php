@@ -146,101 +146,68 @@ public function store(Request $request)
             ->with('error', 'Something went wrong: ' . $e->getMessage());
     }
 }
-
-public function createDraftOrder(Request $request)
+public function checkout(Request $request)
 {
     try {
-        $validated = $request->validate([
-            'shop'             => 'required|string',
-            'items'            => 'required|array|min:1',
-            'items.*.variant_id' => 'required|integer',
-            'items.*.quantity'   => 'required|integer|min:1',
-            'discount_percent' => 'required|numeric|min:0|max:100',
-            'bundle_id'        => 'nullable|string',
-            'note'             => 'nullable|string|max:500',
-            // ❌ customer field hata di
-        ]);
+        $shop = $request->get('shop');
+        $variant = $request->get('main_variant');
+        $qty = $request->get('quantity', 1);
+        $discount = $request->get('discount', 0);
 
-        // get shop access token
-        $shopRec = Shop::where('shop', $validated['shop'])->first();
-        if (!$shopRec || !$shopRec->token) {
-            return response()->json(['message' => 'Shop or token not found'], 422);
-        }
-        $accessToken = $shopRec->token;
-        $shopDomain  = $shopRec->shop;
-
-        // line items
-        $lineItems = collect($validated['items'])->map(function ($i) {
-            return [
-                'variant_id' => (int) $i['variant_id'],
-                'quantity'   => (int) $i['quantity'],
-            ];
-        })->values()->all();
-
-        // applied discount
-        $appliedDiscount = [
-            'description' => 'Bundle Discount',
-            'value_type'  => 'percentage',
-            'value'       => (float) $validated['discount_percent'],
-        ];
-
-        // optional note attributes
-        $noteAttributes = [];
-        if (!empty($validated['bundle_id'])) {
-            $noteAttributes[] = ['name' => 'bundle_id', 'value' => $validated['bundle_id']];
-        }
-        if (!empty($validated['discount_percent'])) {
-            $noteAttributes[] = ['name' => 'bundle_discount_percent', 'value' => (string)$validated['discount_percent']];
+        if (!$shop || !$variant) {
+            return response("Missing shop or variant", 400);
         }
 
-        // payload
-        $payload = [
-            'draft_order' => [
-                'line_items'                  => $lineItems,
-                'applied_discount'            => $appliedDiscount,
-                'use_customer_default_address'=> false, // ✅ ab zaroorat nahi
-                'tags'                        => 'bundle,generated-by-app',
-                'note'                        => $validated['note'] ?? 'Bundle checkout',
-                'note_attributes'             => $noteAttributes,
-            ],
-        ];
+        $shopModel = Shop::where('shop', $shop)->firstOrFail();
+        $accessToken = $shopModel->token;
 
-        $resp = Http::withHeaders([
+        // STEP 1: Create a cart with the variant and qty
+        $cartResponse = Http::withHeaders([
             'X-Shopify-Access-Token' => $accessToken,
-            'Content-Type'           => 'application/json',
-        ])->post("https://{$shopDomain}/admin/api/2025-01/draft_orders.json", $payload);
+            'Content-Type' => 'application/json'
+        ])->post("https://{$shop}/admin/api/2025-01/carts.json", [
+            'cart' => [
+                'line_items' => [
+                    [
+                        'variant_id' => (int) $variant,
+                        'quantity' => (int) $qty,
+                    ]
+                ],
+                'attributes' => [
+                    'bundle_discount' => $discount . '%'
+                ]
+            ]
+        ]);
 
-        if (!$resp->successful()) {
-            Log::error('Draft order create failed', [
-                'shop' => $shopDomain,
-                'body' => $resp->body(),
-                'payload' => $payload
+        if ($cartResponse->failed()) {
+            Log::error("Bundle Checkout Cart Create Failed", [
+                'shop' => $shop,
+                'variant' => $variant,
+                'qty' => $qty,
+                'response' => $cartResponse->body()
             ]);
-            return response()->json([
-                'message' => 'Shopify draft order create failed',
-                'error'   => $resp->json()
-            ], 422);
+            return response("Failed to create cart", 500);
         }
 
-        $draft = $resp->json('draft_order') ?? [];
+        $cartData = $cartResponse->json();
+        $checkoutUrl = $cartData['cart']['checkout_url'] ?? null;
 
-        return response()->json([
-            'draft_order_id' => $draft['id'] ?? null,
-            'name'           => $draft['name'] ?? null,
-            'invoice_url'    => $draft['invoice_url'] ?? null,
+        // STEP 2: Redirect to checkout URL
+        if ($checkoutUrl) {
+            return redirect()->away($checkoutUrl);
+        }
+
+        return response("Checkout URL not found", 500);
+
+    } catch (\Exception $e) {
+        Log::error("Bundle Checkout Error: " . $e->getMessage(), [
+            'trace' => $e->getTraceAsString(),
+            'request' => $request->all()
         ]);
-    } catch (\Illuminate\Validation\ValidationException $ve) {
-        return response()->json([
-            'message' => 'Validation failed',
-            'errors'  => $ve->errors()
-        ], 422);
-    } catch (\Throwable $e) {
-        Log::error('createDraftOrder error: '.$e->getMessage(), [
-            'trace' => $e->getTraceAsString()
-        ]);
-        return response()->json(['message' => 'Server error'], 500);
+        return response("Something went wrong: " . $e->getMessage(), 500);
     }
 }
+
 
 
 
