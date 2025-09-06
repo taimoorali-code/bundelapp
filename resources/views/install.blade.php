@@ -9,27 +9,43 @@
     <style>
         body {
             background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         .install-card {
-            max-width: 450px;
-            margin: 80px auto;
-            padding: 30px;
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 35px 30px;
             border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            box-shadow: 0 6px 25px rgba(0,0,0,0.1);
             background-color: #ffffff;
+            transition: transform 0.2s;
+        }
+        .install-card:hover {
+            transform: translateY(-5px);
         }
         .install-card h1 {
             font-size: 1.8rem;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             text-align: center;
+            color: #333;
+        }
+        .install-card p {
+            font-size: 0.95rem;
+            color: #6c757d;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .form-control {
+            height: 45px;
+            font-size: 0.95rem;
+            border-radius: 8px;
+            margin-bottom: 20px;
         }
         .btn-install {
             width: 100%;
             padding: 12px;
             font-size: 1rem;
-        }
-        .shop-input {
-            display: none; /* hidden, as we pass shop via hidden input */
+            border-radius: 8px;
         }
     </style>
 </head>
@@ -37,15 +53,15 @@
 
 <div class="install-card">
     <h1>Install the Shopify App</h1>
-    <p class="text-center text-muted">Click the button below to install this app on your Shopify store.</p>
+    <p>Enter your Shopify store URL and click below to install the app.</p>
 
     <form action="{{ route('shopify.install') }}" method="GET">
-        <input type="text" name="shop" value="{{ request('shop') }}">
+        <input type="text" name="shop" class="form-control" placeholder="your-store.myshopify.com" value="{{ request('shop') }}" required>
         <button type="submit" class="btn btn-primary btn-install">Install App</button>
     </form>
 </div>
 
-<!-- Bootstrap 5 JS (optional, for better components) -->
+<!-- Bootstrap 5 JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
