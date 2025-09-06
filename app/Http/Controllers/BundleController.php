@@ -87,7 +87,7 @@ class BundleController extends Controller
                 // 1. Create Shopify discount via API
                 $discountCode = $this->createShopifyDiscount(
                     $shop->shop,
-                    $shop->access_token,
+                    $shop->token,
                     $discount['discount_value'],
                     $discount['min_qty'],
                     $productId

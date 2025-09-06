@@ -39,7 +39,7 @@ class AuthController extends Controller
     // Save it temporarily (e.g., encrypted in Laravel cache or signed cookie)
     cookie()->queue('oauth_state', $state, 5); // 5 minutes
 
-    $scopes = 'read_products,write_draft_orders,read_draft_orders';
+    $scopes = 'read_products,write_products,read_discounts,write_discounts,write_price_rules,read_price_rules';
     $redirectUri = route('auth.callback'); // Your /auth/callback route
 
     $installUrl = "https://{$shop}/admin/oauth/authorize?client_id=" . env('SHOPIFY_API_KEY') .
