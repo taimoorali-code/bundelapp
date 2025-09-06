@@ -53,7 +53,17 @@ class BundleController extends Controller
 
     public function create()
     {
-        return view('bundles.create');
+        $shop = $request->query('shop');
+        $accessToken = Shop::where('shop', $shop)->first()->token;
+
+        // Get first 5 products
+        $response = Http::withHeaders([
+            'X-Shopify-Access-Token' => $accessToken
+        ])->get("https://{$shop}/admin/api/2025-01/products.json?limit=5");
+
+        $defaultProducts = $response->json()['products'] ?? [];
+
+        return view('bundles.create', compact('defaultProducts'));
     }
     public function store(Request $request)
     {
