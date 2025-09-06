@@ -146,6 +146,14 @@ class BundleController extends Controller
                 ->with('error', 'Something went wrong: ' . $e->getMessage());
         }
     }
+    public function getDiscountRules(Request $request)
+{
+    $shop = Shop::where('shop', $request->query('shop'))->first();
+    $bundles = Bundle::with('discounts')->where('shop_id', $shop->id)->get();
+
+    return response()->json($bundles);
+}
+
     public function checkout(Request $request)
     {
         // dd($request->all());

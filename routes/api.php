@@ -33,3 +33,4 @@ Route::get('/get-bundle', function (Request $request) {
     return response()->json($bundles);
 });
 
+Route::get('/bundles/discounts', [BundleController::class, 'getDiscountRules']);
