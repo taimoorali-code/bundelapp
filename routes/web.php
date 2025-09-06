@@ -26,7 +26,7 @@ Route::get('/', function (Request $request) {
     }
     //  return redirect()->route('install.page', ['shop' => $shop]);
 
-    return redirect()->route('bundle.index');
+    return redirect()->route('bundles.index');
 });
 
 
