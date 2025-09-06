@@ -159,7 +159,8 @@ class BundleController extends Controller
             }
 
             $shopModel = Shop::where('shop', $shop)->firstOrFail();
-            $storefrontToken = $shopModel->token;
+            $shoptoken = $shopModel->token;
+            $storefrontToken = '9a07bcc664e1ec1f8e6d370b5af6c527';
 
             // STEP 1: Create a cart with the variant and qty
             $cartResponse = Http::withHeaders([
