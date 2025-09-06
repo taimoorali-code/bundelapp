@@ -36,7 +36,7 @@ Route::get('/install-page', function () {
 
 Route::get('/bundle-setup', [BundleController::class, 'showBundleSetup'])->name('bundle.setup');
 Route::get('/search-products', [BundleController::class, 'searchProducts']);
-Route::post('/bundles', [BundleController::class, 'store'])->name('bundle.store');
+Route::post('/bundles-store', [BundleController::class, 'store'])->name('bundle.store');
 
 
 Route::get('/install', [AuthController::class, 'install'])->name('shopify.install');
