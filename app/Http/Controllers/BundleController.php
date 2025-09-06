@@ -45,11 +45,20 @@ class BundleController extends Controller
     }
 
 
-    public function index()
-    {
-        $bundles = Bundle::with('discounts' , 'shop')->get();
-        return view('bundles.index', compact('bundles'));
+   public function index(Request $request)
+{
+    $query = Bundle::with('discounts', 'shop');
+
+    // If 'shop' is in the request, filter by it
+    if ($request->has('shop') && !empty($request->shop)) {
+        $query->where('shop', $request->shop);
     }
+
+    $bundles = $query->get();
+
+    return view('bundles.index', compact('bundles'));
+}
+
 
     public function create(Request $request)
     {
