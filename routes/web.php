@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BundleController;
 use Illuminate\Http\Request; // instead of Facade
+use App\Http\Controllers\BundleDiscountController;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,3 +43,11 @@ Route::get('/install', [AuthController::class, 'install'])->name('shopify.instal
 Route::get('/auth/callback', [AuthController::class, 'callback'])->name('auth.callback'); // Your /auth/callback route
 // routes/web.php
 Route::get('/apps/bundle-checkout', [BundleController::class, 'checkout'])->name('bundle.checkout');
+
+// routes/web.php
+
+Route::middleware(['auth.shopify'])->group(function () {
+    Route::get('/bundle-discounts', [BundleDiscountController::class, 'index'])->name('bundle_discounts.index');
+    Route::get('/bundle-discounts/create', [BundleDiscountController::class, 'create'])->name('bundle_discounts.create');
+    Route::post('/bundle-discounts', [BundleDiscountController::class, 'store'])->name('bundle_discounts.store');
+});

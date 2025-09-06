@@ -24,7 +24,7 @@ class AuthController extends Controller
             hostName: parse_url(env('SHOPIFY_APP_URL'), PHP_URL_HOST),
             sessionStorage: new FileSessionStorage(storage_path('shopify_sessions')),
             apiVersion: '2025-01',
-            isEmbeddedApp: false
+            isEmbeddedApp: true
         );
 
     }
