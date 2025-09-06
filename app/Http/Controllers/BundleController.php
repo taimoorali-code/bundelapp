@@ -91,8 +91,9 @@ public function index(Request $request)
                 'discounts.*.discount_value' => 'required|numeric|min:0',
                 'products' => 'array'
             ]);
+             $shopdata = $request->query('shop') ?? session('shopify_shop');
 
-            $shop = Shop::where('shop', $request->shop)->firstOrFail();
+            $shop = Shop::where('shop', $shopdata)->firstOrFail();
 
             $products = $validated['bundle_type'] === 'specific' ? $validated['products'] : [null];
 
