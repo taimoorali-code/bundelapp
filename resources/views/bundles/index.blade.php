@@ -5,7 +5,7 @@
 @section('content')
     <h2>Bundles</h2>
 
-    <a href="{{ route('bundles.create') }}" class="btn btn-primary mb-3">+ Create Bundle</a>
+<a href="{{ route('bundles.create', ['shop' => request('shop')]) }}" class="btn btn-primary mb-3">+ Create Bundle</a>
 
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
