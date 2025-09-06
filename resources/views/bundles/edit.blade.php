@@ -36,13 +36,13 @@
         </div>
 
         <!-- Bundle Type -->
-        <div class="mb-3">
-            <label for="bundle_type" class="form-label">Apply Bundle To:</label>
-            <select id="bundle_type" class="form-select">
-                <option value="all" {{ $bundle->bundle_type == 'all' ? 'selected' : '' }}>All Products</option>
-                <option value="specific" {{ $bundle->bundle_type == 'specific' ? 'selected' : '' }}>Specific Products</option>
-            </select>
-        </div>
+      <div class="mb-3">
+    <label for="bundle_type" class="form-label">Apply Bundle To:</label>
+    <select id="bundle_type" class="form-select">
+        <option value="all" {{ is_null($bundle->shopify_product_id) ? 'selected' : '' }}>All Products</option>
+        <option value="specific" {{ !is_null($bundle->shopify_product_id) ? 'selected' : '' }}>Specific Products</option>
+    </select>
+</div>
 
         <!-- Product Selector -->
         <div id="product-selector" style="display: {{ $bundle->bundle_type == 'specific' ? 'block' : 'none' }};">
