@@ -173,6 +173,7 @@ public function edit($id)
     
     // Fetch default products for the selector (first 5 products from Shopify)
     $shop = $bundle->shop;
+    dd($shop);
     $accessToken = Shop::where('shop', $shop)->first()->token;
 
     $response = Http::withHeaders([
