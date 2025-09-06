@@ -210,10 +210,9 @@ class BundleController extends Controller
 
             $cartData = $cartResponse->json();
             
-            $checkoutUrl = $cartData['data']['checkoutCreate']['checkout']['webUrl'] ?? null;
+            $checkoutUrl = $cartData['data']['cartCreate']['cart']['checkoutUrl'] ?? null;
 
 
-            dd($cartData);
 
 
             // $cartData = $cartResponse->json();
