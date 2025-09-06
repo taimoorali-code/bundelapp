@@ -148,6 +148,7 @@ class BundleController extends Controller
     }
     public function checkout(Request $request)
     {
+        dd($request->all());
         try {
             $shop = $request->get('shop');
             $variant = $request->get('main_variant');
