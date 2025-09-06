@@ -40,7 +40,7 @@
     <p class="text-center text-muted">Click the button below to install this app on your Shopify store.</p>
 
     <form action="{{ route('shopify.install') }}" method="GET">
-        <input type="hidden" name="shop" value="{{ request('shop') }}">
+        <input type="text" name="shop" value="{{ request('shop') }}">
         <button type="submit" class="btn btn-primary btn-install">Install App</button>
     </form>
 </div>
