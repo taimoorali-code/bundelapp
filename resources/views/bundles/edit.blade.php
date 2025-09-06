@@ -146,18 +146,20 @@
             const shop = "{{ request('shop') }}";
             if (query.length < 2) return;
 
-            fetch(`/search-products?q=${query}&shop=${shop}`)
-                .then(res => res.json())
-                .then(data => {
-                    let html = '';
-                    data.forEach(p => {
-                        const checked = {{ $bundle->products->pluck('shopify_product_id') }}.includes(p.id) ? 'checked' : '';
-                        html += `<div>
-                            <input type="checkbox" name="products[]" value="${p.id}" ${checked}> ${p.title}
-                        </div>`;
-                    });
-                    productResults.innerHTML = html;
-                });
+          fetch(`/search-products?q=${query}&shop=${shop}`)
+    .then(res => res.json())
+    .then(data => {
+        let html = '';
+        data.forEach(p => {
+            // Check if this product is the one already selected in the bundle
+            const checked = (p.id == {{ $bundle->shopify_product_id ?? 'null' }}) ? 'checked' : '';
+            html += `<div>
+                <input type="checkbox" name="products[]" value="${p.id}" ${checked}> ${p.title}
+            </div>`;
+        });
+        productResults.innerHTML = html;
+    });
+
         }, 300);
     });
 </script>
