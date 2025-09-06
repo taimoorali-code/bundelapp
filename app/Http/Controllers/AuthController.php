@@ -77,7 +77,7 @@ class AuthController extends Controller
         ['token' => $accessToken]
     );
 
-    return "App installed successfully on {$shop}!";
+    return redirect("https://{$shop}/admin/apps");
 }
 
 }
