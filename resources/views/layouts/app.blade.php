@@ -40,15 +40,7 @@
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar -->
-        <div class="col-2 sidebar">
-            <h4>📦 Bundle App</h4>
-            <a href="{{ route('bundles.index') }}" class="{{ request()->routeIs('bundles.*') ? 'active' : '' }}">
-                Bundles
-            </a>
-            <a href="{{ route('bundle_discounts.index') }}" class="{{ request()->routeIs('bundle_discounts.*') ? 'active' : '' }}">
-                Discounts
-            </a>
-        </div>
+        
 
         <!-- Main content -->
         <div class="col-10 p-4">
