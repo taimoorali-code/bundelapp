@@ -47,7 +47,7 @@ class BundleController extends Controller
 
     public function index()
     {
-        $bundles = Bundle::with('discounts')->get();
+        $bundles = Bundle::with('discounts' , 'shop')->get();
         return view('bundles.index', compact('bundles'));
     }
 

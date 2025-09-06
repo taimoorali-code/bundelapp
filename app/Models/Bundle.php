@@ -13,4 +13,8 @@ class Bundle extends Model
     {
         return $this->hasMany(BundleDiscount::class);
     }
+    public function shop()
+    {
+        return $this->belongsTo(Shop::class);
+    }
 }
