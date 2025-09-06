@@ -46,8 +46,6 @@ Route::get('/apps/bundle-checkout', [BundleController::class, 'checkout'])->name
 
 // routes/web.php
 
-Route::middleware(['auth.shopify'])->group(function () {
     Route::get('/bundle-discounts', [BundleDiscountController::class, 'index'])->name('bundle_discounts.index');
     Route::get('/bundle-discounts/create', [BundleDiscountController::class, 'create'])->name('bundle_discounts.create');
     Route::post('/bundle-discounts', [BundleDiscountController::class, 'store'])->name('bundle_discounts.store');
-});
