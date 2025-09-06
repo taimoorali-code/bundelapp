@@ -76,6 +76,7 @@ class AuthController extends Controller
         ['shop' => $shop],
         ['token' => $accessToken]
     );
+    session(['shopify_shop' => $shop]);
 
     return redirect("https://{$shop}/admin/apps");
 }
