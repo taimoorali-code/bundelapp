@@ -51,7 +51,7 @@ class BundleController extends Controller
         return view('bundles.index', compact('bundles'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $shop = $request->query('shop');
         $accessToken = Shop::where('shop', $shop)->first()->token;
