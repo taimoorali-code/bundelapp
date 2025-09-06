@@ -11,38 +11,38 @@ use Illuminate\Support\Facades\Log;
 class BundleController extends Controller
 {
 
- public function showBundleSetup(Request $request)
-{
-    $shop = $request->query('shop');
-    $accessToken = Shop::where('shop', $shop)->first()->token;
+    public function showBundleSetup(Request $request)
+    {
+        $shop = $request->query('shop');
+        $accessToken = Shop::where('shop', $shop)->first()->token;
 
-    // Get first 5 products
-    $response = Http::withHeaders([
-        'X-Shopify-Access-Token' => $accessToken
-    ])->get("https://{$shop}/admin/api/2025-01/products.json?limit=5");
+        // Get first 5 products
+        $response = Http::withHeaders([
+            'X-Shopify-Access-Token' => $accessToken
+        ])->get("https://{$shop}/admin/api/2025-01/products.json?limit=5");
 
-    $defaultProducts = $response->json()['products'] ?? [];
+        $defaultProducts = $response->json()['products'] ?? [];
 
-    return view('welcome', compact('defaultProducts'));
-}
+        return view('welcome', compact('defaultProducts'));
+    }
 
-// AJAX route for product search
-public function searchProducts(Request $request)
-{
-    $shop = $request->query('shop');
-    $accessToken = Shop::where('shop', $shop)->first()->token;
-    $query = $request->query('q');
+    // AJAX route for product search
+    public function searchProducts(Request $request)
+    {
+        $shop = $request->query('shop');
+        $accessToken = Shop::where('shop', $shop)->first()->token;
+        $query = $request->query('q');
 
-    $response = Http::withHeaders([
-        'X-Shopify-Access-Token' => $accessToken
-    ])->get("https://{$shop}/admin/api/2025-01/products.json", [
-        'title' => $query,
-        'limit' => 10
-    ]);
+        $response = Http::withHeaders([
+            'X-Shopify-Access-Token' => $accessToken
+        ])->get("https://{$shop}/admin/api/2025-01/products.json", [
+                    'title' => $query,
+                    'limit' => 10
+                ]);
 
-    $products = $response->json()['products'] ?? [];
-    return response()->json($products);
-}
+        $products = $response->json()['products'] ?? [];
+        return response()->json($products);
+    }
 
 
     public function index()
@@ -56,64 +56,37 @@ public function searchProducts(Request $request)
         return view('bundles.create');
     }
 
-public function store(Request $request)
-{
-    try {
-        // Validation
-        $rules = [
-            'title' => 'nullable|string|max:255',
-            'bundle_type' => 'required|in:all,specific',
-            'discounts' => 'required|array|min:1',
-            'discounts.*.min_qty' => 'required|integer|min:1',
-            'discounts.*.discount_value' => 'required|numeric|min:0',
-        ];
+    public function store(Request $request)
+    {
+        try {
+            // Validation
+            $rules = [
+                'title' => 'nullable|string|max:255',
+                'bundle_type' => 'required|in:all,specific',
+                'discounts' => 'required|array|min:1',
+                'discounts.*.min_qty' => 'required|integer|min:1',
+                'discounts.*.discount_value' => 'required|numeric|min:0',
+            ];
 
-        if ($request->bundle_type === 'specific') {
-            $rules['products'] = 'required|array|min:1';
-        }
-
-        $validated = $request->validate($rules);
-
-        $shop = Shop::where('shop', $request->shop)->firstOrFail();
-
-        // CASE 1: ALL PRODUCTS
-        if ($validated['bundle_type'] === 'all') {
-            // find existing bundle
-            $bundle = Bundle::where('shop_id', $shop->id)
-                ->whereNull('shopify_product_id')
-                ->first();
-
-            if (!$bundle) {
-                $bundle = new Bundle([
-                    'shop_id' => $shop->id,
-                    'shopify_product_id' => null,
-                ]);
+            if ($request->bundle_type === 'specific') {
+                $rules['products'] = 'required|array|min:1';
             }
 
-            $bundle->title = $validated['title'] ?? '';
-            $bundle->save();
+            $validated = $request->validate($rules);
 
-            // delete old discounts
-            $bundle->discounts()->delete();
+            $shop = Shop::where('shop', $request->shop)->firstOrFail();
 
-            // insert new discounts
-            foreach ($validated['discounts'] as $discount) {
-                $bundle->discounts()->create($discount);
-            }
-        }
-
-        // CASE 2: SPECIFIC PRODUCTS
-        if ($validated['bundle_type'] === 'specific') {
-            foreach ($validated['products'] as $productId) {
-                // find existing bundle for product
+            // CASE 1: ALL PRODUCTS
+            if ($validated['bundle_type'] === 'all') {
+                // find existing bundle
                 $bundle = Bundle::where('shop_id', $shop->id)
-                    ->where('shopify_product_id', $productId)
+                    ->whereNull('shopify_product_id')
                     ->first();
 
                 if (!$bundle) {
                     $bundle = new Bundle([
                         'shop_id' => $shop->id,
-                        'shopify_product_id' => $productId,
+                        'shopify_product_id' => null,
                     ]);
                 }
 
@@ -128,85 +101,118 @@ public function store(Request $request)
                     $bundle->discounts()->create($discount);
                 }
             }
-        }
 
-        return redirect()
-            ->route('bundle.setup', ['shop' => $request->shop])
-            ->with('success', 'Bundle saved successfully!');
-    } catch (\Exception $e) {
-        Log::error('Bundle Store Error: ' . $e->getMessage(), [
-            'trace' => $e->getTraceAsString(),
-            'shop'  => $request->shop,
-            'data'  => $request->all()
-        ]);
+            // CASE 2: SPECIFIC PRODUCTS
+            if ($validated['bundle_type'] === 'specific') {
+                foreach ($validated['products'] as $productId) {
+                    // find existing bundle for product
+                    $bundle = Bundle::where('shop_id', $shop->id)
+                        ->where('shopify_product_id', $productId)
+                        ->first();
 
-        return redirect()
-            ->back()
-            ->withInput()
-            ->with('error', 'Something went wrong: ' . $e->getMessage());
-    }
-}
-public function checkout(Request $request)
-{
-    try {
-        $shop = $request->get('shop');
-        $variant = $request->get('main_variant');
-        $qty = $request->get('quantity', 1);
-        $discount = $request->get('discount', 0);
+                    if (!$bundle) {
+                        $bundle = new Bundle([
+                            'shop_id' => $shop->id,
+                            'shopify_product_id' => $productId,
+                        ]);
+                    }
 
-        if (!$shop || !$variant) {
-            return response("Missing shop or variant", 400);
-        }
+                    $bundle->title = $validated['title'] ?? '';
+                    $bundle->save();
 
-        $shopModel = Shop::where('shop', $shop)->firstOrFail();
-        $accessToken = $shopModel->token;
+                    // delete old discounts
+                    $bundle->discounts()->delete();
 
-        // STEP 1: Create a cart with the variant and qty
-        $cartResponse = Http::withHeaders([
-            'X-Shopify-Access-Token' => $accessToken,
-            'Content-Type' => 'application/json'
-        ])->post("https://{$shop}/admin/api/2025-01/carts.json", [
-            'cart' => [
-                'line_items' => [
-                    [
-                        'variant_id' => (int) $variant,
-                        'quantity' => (int) $qty,
-                    ]
-                ],
-                'attributes' => [
-                    'bundle_discount' => $discount . '%'
-                ]
-            ]
-        ]);
+                    // insert new discounts
+                    foreach ($validated['discounts'] as $discount) {
+                        $bundle->discounts()->create($discount);
+                    }
+                }
+            }
 
-        if ($cartResponse->failed()) {
-            Log::error("Bundle Checkout Cart Create Failed", [
-                'shop' => $shop,
-                'variant' => $variant,
-                'qty' => $qty,
-                'response' => $cartResponse->body()
+            return redirect()
+                ->route('bundle.setup', ['shop' => $request->shop])
+                ->with('success', 'Bundle saved successfully!');
+        } catch (\Exception $e) {
+            Log::error('Bundle Store Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'shop' => $request->shop,
+                'data' => $request->all()
             ]);
-    return response("Failed to create cart: " . $cartResponse->body(), 400);
+
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Something went wrong: ' . $e->getMessage());
         }
-
-        $cartData = $cartResponse->json();
-        $checkoutUrl = $cartData['cart']['checkout_url'] ?? null;
-
-        // STEP 2: Redirect to checkout URL
-        if ($checkoutUrl) {
-            return redirect()->away($checkoutUrl);
-        }
-
-        return response("Checkout URL not found", 500);
-
-    } catch (\Exception $e) {
-        Log::error("Bundle Checkout Error: " . $e->getMessage(), [
-            'trace' => $e->getTraceAsString(),
-            'request' => $request->all()
-        ]);
-        return response("Something went wrong: " . $e->getMessage(), 500);
     }
-}
+    public function checkout(Request $request)
+    {
+        try {
+            $shop = $request->get('shop');
+            $variant = $request->get('main_variant');
+            $qty = $request->get('quantity', 1);
+            $discount = $request->get('discount', 0);
+
+            if (!$shop || !$variant) {
+                return response("Missing shop or variant", 400);
+            }
+
+            $shopModel = Shop::where('shop', $shop)->firstOrFail();
+            $accessToken = $shopModel->token;
+
+            // STEP 1: Create a cart with the variant and qty
+            $cartResponse = Http::withHeaders([
+                'X-Shopify-Access-Token' => $accessToken,
+                'Content-Type' => 'application/json'
+            ])->post("https://{$shop}/admin/api/2025-01/carts.json", [
+                        'cart' => [
+                            'line_items' => [
+                                [
+                                    'variant_id' => (int) $variant,
+                                    'quantity' => (int) $qty,
+                                ]
+                            ],
+                            'attributes' => [
+                                'bundle_discount' => $discount . '%'
+                            ]
+                        ]
+                    ]);
+                                $cartData = $cartResponse->json();
+                                dd($cartData);
+
+            if ($cartResponse->failed()) {
+                Log::error("Bundle Checkout Cart Create Failed", [
+                    'shop' => $shop,
+                    'variant' => $variant,
+                    'qty' => $qty,
+                    'response' => $cartResponse->body()
+                ]);
+                return response()->json([
+                    'message' => 'Failed to create cart',
+                    'details' => $cartResponse->json(),
+                ], 400);
+            }
+
+
+            $cartData = $cartResponse->json();
+            $checkoutUrl = $cartData['cart']['checkout_url'] ?? null;
+
+            // STEP 2: Redirect to checkout URL
+            if ($checkoutUrl) {
+                return redirect()->away($checkoutUrl);
+            }
+
+            return response("Checkout URL not found", 500);
+
+        } catch (\Exception $e) {
+            Log::error("Bundle Checkout Error: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all()
+            ]);
+            return response("Something went wrong: " . $e->getMessage(), 500);
+        }
+    }
 
 
 
