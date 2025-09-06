@@ -212,12 +212,6 @@ class BundleController extends Controller
             
             $checkoutUrl = $cartData['data']['cartCreate']['cart']['checkoutUrl'] ?? null;
 
-
-
-
-            // $cartData = $cartResponse->json();
-            // $checkoutUrl = $cartData['cart']['checkout_url'] ?? null;
-
             // STEP 2: Redirect to checkout URL
             if ($checkoutUrl) {
                 return redirect()->away($checkoutUrl);
