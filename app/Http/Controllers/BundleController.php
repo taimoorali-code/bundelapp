@@ -172,7 +172,7 @@ public function edit($id)
     $bundle = Bundle::with('discounts')->findOrFail($id);
     
     // Fetch default products for the selector (first 5 products from Shopify)
-    $shop = $bundle->shop;
+    $shop = $bundle;
     dd($shop);
     $accessToken = Shop::where('shop', $shop)->first()->token;
 
