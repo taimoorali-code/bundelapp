@@ -107,7 +107,8 @@ class BundleController extends Controller
                     $bundle->discounts()->create([
                         'min_qty' => $discount['min_qty'],
                         'discount_value' => $discount['discount_value'],
-                        'shopify_discount_code' => $discountCode
+                        'shopify_discount_code' => $discountCode['code'],
+                        'shopify_price_rule_id' => $discountCode['price_rule_id'],
                     ]);
                 }
             }
@@ -124,10 +125,17 @@ class BundleController extends Controller
     /**
      * Create a Shopify discount code
      */
-    private function createShopifyDiscount($shop, $token, $discountPercent, $minQty, $productId = null)
-    {
-        $shopDomain = $shop; // or $shop->shop
-        $priceRule = [
+ private function createShopifyDiscount($shop, $token, $discountPercent, $minQty, $productId = null)
+{
+    $client = new \GuzzleHttp\Client();
+
+    // Create Price Rule
+    $res = $client->post("https://$shop/admin/api/2025-07/price_rules.json", [
+        'headers' => [
+            'X-Shopify-Access-Token' => $token,
+            'Content-Type' => 'application/json'
+        ],
+        'body' => json_encode([
             "price_rule" => [
                 "title" => "Bundle " . uniqid(),
                 "target_type" => "line_item",
@@ -142,56 +150,71 @@ class BundleController extends Controller
                     "greater_than_or_equal_to" => $minQty
                 ]
             ]
-        ];
+        ])
+    ]);
 
-        $client = new \GuzzleHttp\Client();
-        $res = $client->post("https://$shopDomain/admin/api/2025-07/price_rules.json", [
-            'headers' => [
-                'X-Shopify-Access-Token' => $token,
-                'Content-Type' => 'application/json'
-            ],
-            'body' => json_encode($priceRule)
-        ]);
+    $priceRuleData = json_decode($res->getBody(), true);
+    $priceRuleId = $priceRuleData['price_rule']['id'];
 
-        $priceRuleData = json_decode($res->getBody(), true);
-        $priceRuleId = $priceRuleData['price_rule']['id'];
+    // Create Discount Code
+    $res2 = $client->post("https://$shop/admin/api/2025-07/price_rules/$priceRuleId/discount_codes.json", [
+        'headers' => [
+            'X-Shopify-Access-Token' => $token,
+            'Content-Type' => 'application/json'
+        ],
+        'body' => json_encode([
+            'discount_code' => [
+                'code' => 'BUNDLE-' . strtoupper(uniqid())
+            ]
+        ])
+    ]);
 
-        // Create Discount Code
-        $res2 = $client->post("https://$shopDomain/admin/api/2025-07/price_rules/$priceRuleId/discount_codes.json", [
-            'headers' => [
-                'X-Shopify-Access-Token' => $token,
-                'Content-Type' => 'application/json'
-            ],
-            'body' => json_encode([
-                'discount_code' => [
-                    'code' => 'BUNDLE-' . strtoupper(uniqid())
-                ]
-            ])
-        ]);
+    $discountData = json_decode($res2->getBody(), true);
 
-        $discountData = json_decode($res2->getBody(), true);
-        return $discountData['discount_code']['code'];
-    }
+    return [
+        'code' => $discountData['discount_code']['code'],
+        'price_rule_id' => $priceRuleId
+    ];
+}
+
    
-    public function destroy($id)
-    {
-        try {
-            $bundle = Bundle::with('discounts')->findOrFail($id);
+ public function destroy($id)
+{
+    try {
+        $bundle = Bundle::with(['discounts', 'shop'])->findOrFail($id);
+        $shop = $bundle->shop;
 
-            // Delete related discounts first
-            $bundle->discounts()->delete();
-
-            // Delete the bundle itself
-            $bundle->delete();
-
-            return redirect()->route('bundles.index')
-                ->with('success', 'Bundle deleted successfully!');
-        } catch (\Exception $e) {
-            Log::error('Bundle Delete Error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            return redirect()->route('bundles.index')
-                ->with('error', 'Failed to delete bundle: ' . $e->getMessage());
+        foreach ($bundle->discounts as $discount) {
+            if (!empty($discount->shopify_price_rule_id)) {
+                try {
+                    $client = new \GuzzleHttp\Client();
+                    $client->delete("https://{$shop->shop}/admin/api/2025-07/price_rules/{$discount->shopify_price_rule_id}.json", [
+                        'headers' => [
+                            'X-Shopify-Access-Token' => $shop->token,
+                            'Content-Type' => 'application/json'
+                        ]
+                    ]);
+                } catch (\Exception $ex) {
+                    Log::warning("Failed to delete price rule from Shopify: " . $ex->getMessage());
+                }
+            }
         }
+
+        // Delete related discounts from DB
+        $bundle->discounts()->delete();
+
+        // Delete the bundle itself
+        $bundle->delete();
+
+        return redirect()->route('bundles.index')
+            ->with('success', 'Bundle and related discounts deleted from Shopify & DB successfully!');
+    } catch (\Exception $e) {
+        Log::error('Bundle Delete Error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+        return redirect()->route('bundles.index')
+            ->with('error', 'Failed to delete bundle: ' . $e->getMessage());
     }
+}
+
 
 
 

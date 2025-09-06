@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class BundleDiscount extends Model
 {
-    protected $fillable = ['bundle_id', 'min_qty', 'discount_type', 'discount_value', 'shopify_discount_code'];
+    protected $fillable = ['bundle_id', 'min_qty', 'discount_type', 'discount_value', 'shopify_discount_code' , 'shopify_price_rule_id'];
 
     public function bundle()
     {
