@@ -48,15 +48,16 @@
         <div id="product-selector" style="display: {{ $bundle->bundle_type == 'specific' ? 'block' : 'none' }};">
             <label for="product-search" class="form-label">Search Products:</label>
             <input type="text" id="product-search" class="form-control mb-2" placeholder="Search products...">
-            <div id="product-results" class="product-list">
-                @foreach($defaultProducts as $product)
-                    <div>
-                        <input type="checkbox" name="products[]" value="{{ $product['id'] }}" 
-                        {{ in_array($product['id'], $bundle->products->pluck('shopify_product_id')->toArray()) ? 'checked' : '' }}>
-                        {{ $product['title'] }}
-                    </div>
-                @endforeach
-            </div>
+          <div id="product-results" class="product-list">
+    @foreach($defaultProducts as $product)
+        <div>
+            <input type="checkbox" name="products[]" value="{{ $product['id'] }}" 
+            {{ $bundle->shopify_product_id == $product['id'] ? 'checked' : '' }}>
+            {{ $product['title'] }}
+        </div>
+    @endforeach
+</div>
+
         </div>
 
         <!-- Discounts -->
