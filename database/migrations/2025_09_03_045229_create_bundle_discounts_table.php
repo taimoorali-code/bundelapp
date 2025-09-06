@@ -17,6 +17,7 @@ return new class extends Migration
         $table->integer('min_qty');
         $table->enum('discount_type', ['percent', 'fixed'])->default('percent');
         $table->decimal('discount_value', 8, 2); // 14% or 5$ etc
+        $table->string('shopify_discount_code')->nullable(); // New column for Shopify discount code
         $table->timestamps();
     });
 }
