@@ -159,27 +159,37 @@ class BundleController extends Controller
             }
 
             $shopModel = Shop::where('shop', $shop)->firstOrFail();
-            $accessToken = $shopModel->token;
+            $storefrontToken = $shopModel->token;
 
             // STEP 1: Create a cart with the variant and qty
             $cartResponse = Http::withHeaders([
-                'X-Shopify-Access-Token' => $accessToken,
-                'Content-Type' => 'application/json'
-            ])->post("https://{$shop}/admin/api/2025-01/carts.json", [
-                        'cart' => [
-                            'line_items' => [
+                'X-Shopify-Storefront-Access-Token' => $storefrontToken,
+                'Content-Type' => 'application/json',
+            ])
+                ->post("https://{$shop}/api/2025-01/graphql.json", [
+                    'query' => 'mutation checkoutCreate($input: CheckoutCreateInput!) {
+        checkoutCreate(input: $input) {
+          checkout {
+            id
+            webUrl
+          }
+          checkoutUserErrors {
+            field
+            message
+          }
+        }
+    }',
+                    'variables' => [
+                        'input' => [
+                            'lineItems' => [
                                 [
-                                    'variant_id' => (int) $variant,
+                                    'variantId' => "gid://shopify/ProductVariant/{$variant}",
                                     'quantity' => (int) $qty,
                                 ]
-                            ],
-                            'attributes' => [
-                                'bundle_discount' => $discount . '%'
                             ]
                         ]
-                    ]);
-                                $cartData = $cartResponse->json();
-                                dd($cartData);
+                    ],
+                ]);
 
             if ($cartResponse->failed()) {
                 Log::error("Bundle Checkout Cart Create Failed", [
@@ -194,9 +204,16 @@ class BundleController extends Controller
                 ], 400);
             }
 
-
             $cartData = $cartResponse->json();
-            $checkoutUrl = $cartData['cart']['checkout_url'] ?? null;
+            
+            $checkoutUrl = $cartData['data']['checkoutCreate']['checkout']['webUrl'] ?? null;
+
+
+            dd($checkoutUrl);
+
+
+            // $cartData = $cartResponse->json();
+            // $checkoutUrl = $cartData['cart']['checkout_url'] ?? null;
 
             // STEP 2: Redirect to checkout URL
             if ($checkoutUrl) {
