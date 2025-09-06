@@ -26,7 +26,7 @@
             @foreach($bundles as $bundle)
                 <tr>
                     <td>{{ $bundle->id }}</td>
-                    <td>{{ $bundle->shop->name }}</td>
+                    <td>{{ $bundle->shop->shop }}</td>
                     <td>{{ $bundle->shopify_product_id }}</td>
                     <td>{{ $bundle->title }}</td>
                     <td>
