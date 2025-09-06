@@ -148,6 +148,8 @@ class BundleController extends Controller
     }
     public function getDiscountRules(Request $request)
 {
+        Log::info('Discount API hit', $request->all());
+
     $shop = Shop::where('shop', $request->query('shop'))->first();
     $bundles = Bundle::with('discounts')->where('shop_id', $shop->id)->get();
 
