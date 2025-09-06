@@ -14,13 +14,29 @@
     <style>
         body {
             background: #f9fafb;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center; /* center horizontally */
+            align-items: center;    /* center vertically */
+            font-family: 'Inter', sans-serif;
         }
+
+        .container-flex {
+            display: flex;
+            width: 100%;
+            max-width: 1200px;
+            gap: 20px;
+        }
+
         .sidebar {
             min-height: 100vh;
             background: #111827;
             color: #fff;
             padding: 20px;
+            flex: 0 0 220px; /* fixed width sidebar */
         }
+
         .sidebar a {
             color: #d1d5db;
             display: block;
@@ -29,24 +45,35 @@
             text-decoration: none;
             margin-bottom: 6px;
         }
+
         .sidebar a.active,
         .sidebar a:hover {
             background: #2563eb;
             color: #fff;
         }
+
+        .main-content {
+            flex: 1;
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+        }
     </style>
 </head>
 <body>
-<div class="container-fluid">
-    <div class="row">
+    <div class="container-flex">
         <!-- Sidebar -->
-        
+        <div class="sidebar">
+            <a href="#" class="active">Dashboard</a>
+            <a href="#">Bundles</a>
+            <a href="#">Settings</a>
+        </div>
 
         <!-- Main content -->
-        <div class="col-10 p-4">
+        <div class="main-content">
             @yield('content')
         </div>
     </div>
-</div>
 </body>
 </html>
