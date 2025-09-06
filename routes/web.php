@@ -45,8 +45,9 @@ Route::get('/auth/callback', [AuthController::class, 'callback'])->name('auth.ca
 Route::get('/apps/bundle-checkout', [BundleController::class, 'checkout'])->name('bundle.checkout');
 
 // routes/web.php
-    Route::get('/bundles', [BundleController::class, 'index'])->name('bundles.index');
+    // Route::get('/bundles', [BundleController::class, 'index'])->name('bundles.index');
 
+Route::resource('bundles', BundleController::class);
 
     Route::get('/bundle-discounts', [BundleDiscountController::class, 'index'])->name('bundle_discounts.index');
     Route::get('/bundle-discounts/create', [BundleDiscountController::class, 'create'])->name('bundle_discounts.create');
