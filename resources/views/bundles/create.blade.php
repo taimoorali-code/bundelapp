@@ -49,6 +49,9 @@
 </head>
 
 <body>
+    <div class="back">
+        <a href="{{ route('bundles.index', ['shop' => request('shop')]) }}" style="font-weight: bold; color: black;">Back to Bundles</a>
+    </div>
     <div class="bundle-card">
         <h2 class="mb-4 text-center">Create a Bundle</h2>
 
