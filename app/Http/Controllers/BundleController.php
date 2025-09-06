@@ -163,34 +163,37 @@ class BundleController extends Controller
             $storefrontToken = '9a07bcc664e1ec1f8e6d370b5af6c527';
 
             // STEP 1: Create a cart with the variant and qty
-            $cartResponse = Http::withHeaders([
-                'X-Shopify-Storefront-Access-Token' => $storefrontToken,
-                'Content-Type' => 'application/json',
-            ])
-                ->post("https://{$shop}/api/2025-01/graphql.json", [
-                    'query' => 'mutation checkoutCreate($input: CheckoutCreateInput!) {
-        checkoutCreate(input: $input) {
-          checkout {
-            id
-            webUrl
-          }
-          checkoutUserErrors {
-            field
-            message
+          $cartResponse = Http::withHeaders([
+    'X-Shopify-Storefront-Access-Token' => $storefrontToken,
+    'Content-Type' => 'application/json',
+])
+->post("https://{$shop}/api/2025-01/graphql.json", [
+    'query' => '
+        mutation cartCreate($input: CartInput!) {
+          cartCreate(input: $input) {
+            cart {
+              id
+              checkoutUrl
+            }
+            userErrors {
+              field
+              message
+            }
           }
         }
-    }',
-                    'variables' => [
-                        'input' => [
-                            'lineItems' => [
-                                [
-                                    'variantId' => "gid://shopify/ProductVariant/{$variant}",
-                                    'quantity' => (int) $qty,
-                                ]
-                            ]
-                        ]
-                    ],
-                ]);
+    ',
+    'variables' => [
+        'input' => [
+            'lines' => [
+                [
+                    'merchandiseId' => "gid://shopify/ProductVariant/{$variant}",
+                    'quantity' => (int) $qty,
+                ]
+            ]
+        ]
+    ],
+]);
+
 
             if ($cartResponse->failed()) {
                 Log::error("Bundle Checkout Cart Create Failed", [
