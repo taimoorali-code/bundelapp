@@ -15,7 +15,7 @@
         <thead>
             <tr>
                 <th>ID</th>
-                <th>Shop ID</th>
+                <th>Shop</th>
                 <th>Shopify Product ID</th>
                 <th>Title</th>
                 <th>Discounts</th>
@@ -26,14 +26,14 @@
             @foreach($bundles as $bundle)
                 <tr>
                     <td>{{ $bundle->id }}</td>
-                    <td>{{ $bundle->shop_id }}</td>
+                    <td>{{ $bundle->shop }}</td>
                     <td>{{ $bundle->shopify_product_id }}</td>
                     <td>{{ $bundle->title }}</td>
                     <td>
                         @if($bundle->discounts->count())
                             <ul>
                                 @foreach($bundle->discounts as $discount)
-                                    <li>{{ $discount->min_qty }} - {{ $discount->discount_type }} {{ $discount->discount_value }}</li>
+                                    <li>Buy {{ $discount->min_qty }} - Get  {{ $discount->discount_value }} {{ $discount->discount_type }} Off</li>
                                 @endforeach
                             </ul>
                         @else

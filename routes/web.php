@@ -21,12 +21,12 @@ Route::get('/', function (Request $request) {
     $shop = $request->query('shop');
 
     // If shop parameter exists and no token in DB
-    if ($shop && !App\Models\Shop::where('shop', $shop)->exists()) {
+    if (!$shop && !App\Models\Shop::where('shop', $shop)->exists()) {
         return redirect()->route('install.page', ['shop' => $shop]);
     }
-     return redirect()->route('install.page', ['shop' => $shop]);
+    //  return redirect()->route('install.page', ['shop' => $shop]);
 
-    // return redirect()->route('bundle.setup', ['shop' => $shop]);
+    return redirect()->route('bundle.index');
 });
 
 

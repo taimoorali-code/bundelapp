@@ -3,38 +3,161 @@
 @section('title', 'Edit Bundle')
 
 @section('content')
-    <h2>Edit Bundle</h2>
+<div class="bundle-card">
+    <h2 class="mb-4 text-center">Edit Bundle</h2>
 
-    @if ($errors->any())
-        <div class="alert alert-danger">
-            <ul>
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
+    <!-- Alerts -->
+    @if (session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+    @if (session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
 
+    <!-- Bundle Form -->
     <form action="{{ route('bundles.update', $bundle->id) }}" method="POST">
         @csrf
         @method('PUT')
 
+        <input type="hidden" name="shop" value="{{ $bundle->shop }}">
+        <input type="hidden" name="bundle_type" id="bundle_type_input" value="{{ $bundle->bundle_type }}">
+
+        <!-- Title -->
         <div class="mb-3">
-            <label for="shop_id" class="form-label">Shop ID</label>
-            <input type="text" name="shop_id" id="shop_id" class="form-control" value="{{ old('shop_id', $bundle->shop_id) }}" required>
+            <label for="bundle_title" class="form-label">Bundle Title</label>
+            <input type="text" class="form-control" name="title" id="bundle_title"
+                value="{{ old('title', $bundle->title) }}" placeholder="e.g. Buy More & Save" required>
         </div>
 
+        <!-- Bundle Type -->
         <div class="mb-3">
-            <label for="shopify_product_id" class="form-label">Shopify Product ID</label>
-            <input type="text" name="shopify_product_id" id="shopify_product_id" class="form-control" value="{{ old('shopify_product_id', $bundle->shopify_product_id) }}" required>
+            <label for="bundle_type" class="form-label">Apply Bundle To:</label>
+            <select id="bundle_type" class="form-select">
+                <option value="all" {{ $bundle->bundle_type == 'all' ? 'selected' : '' }}>All Products</option>
+                <option value="specific" {{ $bundle->bundle_type == 'specific' ? 'selected' : '' }}>Specific Products</option>
+            </select>
         </div>
 
-        <div class="mb-3">
-            <label for="title" class="form-label">Bundle Title</label>
-            <input type="text" name="title" id="title" class="form-control" value="{{ old('title', $bundle->title) }}" required>
+        <!-- Product Selector -->
+        <div id="product-selector" style="display: {{ $bundle->bundle_type == 'specific' ? 'block' : 'none' }};">
+            <label for="product-search" class="form-label">Search Products:</label>
+            <input type="text" id="product-search" class="form-control mb-2" placeholder="Search products...">
+            <div id="product-results" class="product-list">
+                @foreach($defaultProducts as $product)
+                    <div>
+                        <input type="checkbox" name="products[]" value="{{ $product['id'] }}" 
+                        {{ in_array($product['id'], $bundle->products->pluck('shopify_product_id')->toArray()) ? 'checked' : '' }}>
+                        {{ $product['title'] }}
+                    </div>
+                @endforeach
+            </div>
         </div>
 
-        <button type="submit" class="btn btn-primary">Update Bundle</button>
-        <a href="{{ route('bundles.index') }}" class="btn btn-secondary">Cancel</a>
+        <!-- Discounts -->
+        <div id="bundle-discounts" class="mt-4">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h5 class="mb-3">Bundle Discounts</h5>
+                <button type="button" id="add-discount" class="btn btn-outline-primary mb-3">+ Add Discount</button>
+            </div>
+
+            @foreach($bundle->discounts as $index => $discount)
+            <div class="discount-row row g-2 mb-2">
+                <div class="col-md-4">
+                    <input type="number" name="discounts[{{ $index }}][min_qty]" class="form-control" 
+                    value="{{ $discount->min_qty }}" placeholder="Buy X" required>
+                </div>
+                <div class="col-md-4">
+                    <input type="number" name="discounts[{{ $index }}][discount_value]" class="form-control" 
+                    value="{{ $discount->discount_value }}" placeholder="Save Y%" required>
+                </div>
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-outline-danger remove-discount w-100">Remove</button>
+                </div>
+            </div>
+            @endforeach
+        </div>
+
+        <!-- Submit -->
+        <div class="mt-4 text-center">
+            <button type="submit" class="btn btn-success btn-lg">Update Bundle</button>
+        </div>
     </form>
+</div>
+
+<script>
+    // Toggle product selector
+    const bundleType = document.getElementById('bundle_type');
+    const productSelector = document.getElementById('product-selector');
+    const bundleTypeInput = document.getElementById('bundle_type_input');
+
+    bundleType.addEventListener('change', () => {
+        const isSpecific = bundleType.value === 'specific';
+        productSelector.style.display = isSpecific ? 'block' : 'none';
+        bundleTypeInput.value = bundleType.value;
+    });
+
+    // Add/Remove discounts
+    let discountIndex = {{ $bundle->discounts->count() }};
+    const addDiscount = document.getElementById('add-discount');
+    const discountContainer = document.getElementById('bundle-discounts');
+
+    addDiscount.addEventListener('click', () => {
+        const row = document.createElement('div');
+        row.classList.add('discount-row', 'row', 'g-2', 'mb-2');
+        row.innerHTML = `
+            <div class="col-md-4">
+                <input type="number" name="discounts[${discountIndex}][min_qty]" class="form-control" placeholder="Buy X" required>
+            </div>
+            <div class="col-md-4">
+                <input type="number" name="discounts[${discountIndex}][discount_value]" class="form-control" placeholder="Save Y%" required>
+            </div>
+            <div class="col-md-4">
+                <button type="button" class="btn btn-outline-danger remove-discount w-100">Remove</button>
+            </div>
+        `;
+        discountContainer.appendChild(row);
+        attachRemoveListeners();
+        discountIndex++;
+    });
+
+    function attachRemoveListeners() {
+        document.querySelectorAll('.remove-discount').forEach(btn => {
+            btn.onclick = () => btn.closest('.discount-row').remove();
+        });
+    }
+    attachRemoveListeners();
+
+    // AJAX product search (same as create)
+    const searchInput = document.getElementById('product-search');
+    const productResults = document.getElementById('product-results');
+    let timeout = null;
+
+    searchInput.addEventListener('input', () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            const query = searchInput.value;
+            const shop = "{{ request('shop') }}";
+            if (query.length < 2) return;
+
+            fetch(`/search-products?q=${query}&shop=${shop}`)
+                .then(res => res.json())
+                .then(data => {
+                    let html = '';
+                    data.forEach(p => {
+                        const checked = {{ $bundle->products->pluck('shopify_product_id') }}.includes(p.id) ? 'checked' : '';
+                        html += `<div>
+                            <input type="checkbox" name="products[]" value="${p.id}" ${checked}> ${p.title}
+                        </div>`;
+                    });
+                    productResults.innerHTML = html;
+                });
+        }, 300);
+    });
+</script>
 @endsection

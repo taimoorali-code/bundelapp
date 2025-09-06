@@ -163,190 +163,100 @@ private function createShopifyDiscount($shop, $token, $discountPercent, $minQty,
     return $discountData['discount_code']['code'];
 }
 
+  
 
-        // public function store(Request $request)
-        // {
-        //     try {
-        //         // Validation
-        //         $rules = [
-        //             'title' => 'nullable|string|max:255',
-        //             'bundle_type' => 'required|in:all,specific',
-        //             'discounts' => 'required|array|min:1',
-        //             'discounts.*.min_qty' => 'required|integer|min:1',
-        //             'discounts.*.discount_value' => 'required|numeric|min:0',
-        //         ];
+// BundleController.php
 
-        //         if ($request->bundle_type === 'specific') {
-        //             $rules['products'] = 'required|array|min:1';
-        //         }
-
-        //         $validated = $request->validate($rules);
-
-        //         $shop = Shop::where('shop', $request->shop)->firstOrFail();
-
-        //         // CASE 1: ALL PRODUCTS
-        //         if ($validated['bundle_type'] === 'all') {
-        //             // find existing bundle
-        //             $bundle = Bundle::where('shop_id', $shop->id)
-        //                 ->whereNull('shopify_product_id')
-        //                 ->first();
-
-        //             if (!$bundle) {
-        //                 $bundle = new Bundle([
-        //                     'shop_id' => $shop->id,
-        //                     'shopify_product_id' => null,
-        //                 ]);
-        //             }
-
-        //             $bundle->title = $validated['title'] ?? '';
-        //             $bundle->save();
-
-        //             // delete old discounts
-        //             $bundle->discounts()->delete();
-
-        //             // insert new discounts
-        //             foreach ($validated['discounts'] as $discount) {
-        //                 $bundle->discounts()->create($discount);
-        //             }
-        //         }
-
-        //         // CASE 2: SPECIFIC PRODUCTS
-        //         if ($validated['bundle_type'] === 'specific') {
-        //             foreach ($validated['products'] as $productId) {
-        //                 // find existing bundle for product
-        //                 $bundle = Bundle::where('shop_id', $shop->id)
-        //                     ->where('shopify_product_id', $productId)
-        //                     ->first();
-
-        //                 if (!$bundle) {
-        //                     $bundle = new Bundle([
-        //                         'shop_id' => $shop->id,
-        //                         'shopify_product_id' => $productId,
-        //                     ]);
-        //                 }
-
-        //                 $bundle->title = $validated['title'] ?? '';
-        //                 $bundle->save();
-
-        //                 // delete old discounts
-        //                 $bundle->discounts()->delete();
-
-        //                 // insert new discounts
-        //                 foreach ($validated['discounts'] as $discount) {
-        //                     $bundle->discounts()->create($discount);
-        //                 }
-        //             }
-        //         }
-
-        //         return redirect()
-        //             ->route('bundle.setup', ['shop' => $request->shop])
-        //             ->with('success', 'Bundle saved successfully!');
-        //     } catch (\Exception $e) {
-        //         Log::error('Bundle Store Error: ' . $e->getMessage(), [
-        //             'trace' => $e->getTraceAsString(),
-        //             'shop' => $request->shop,
-        //             'data' => $request->all()
-        //         ]);
-
-        //         return redirect()
-        //             ->back()
-        //             ->withInput()
-        //             ->with('error', 'Something went wrong: ' . $e->getMessage());
-        //     }
-        // }
-    public function getDiscountRules(Request $request)
+public function edit($id)
 {
-        Log::info('Discount API hit', $request->all());
+    $bundle = Bundle::with('discounts')->findOrFail($id);
+    
+    // Fetch default products for the selector (first 5 products from Shopify)
+    $shop = $bundle->shop;
+    $accessToken = Shop::where('shop', $shop)->first()->token;
 
-    $shop = Shop::where('shop', $request->query('shop'))->first();
-    $bundles = Bundle::with('discounts')->where('shop_id', $shop->id)->get();
+    $response = Http::withHeaders([
+        'X-Shopify-Access-Token' => $accessToken
+    ])->get("https://{$shop}/admin/api/2025-01/products.json?limit=5");
 
-    return response()->json($bundles);
+    $defaultProducts = $response->json()['products'] ?? [];
+
+    return view('bundles.edit', compact('bundle', 'defaultProducts'));
 }
 
-    public function checkout(Request $request)
-    {
-        // dd($request->all());
-        try {
-            $shop = $request->get('shop');
-            $variant = $request->get('main_variant');
-            $qty = $request->get('quantity', 1);
-            $discount = $request->get('discount', 0);
+public function update(Request $request, $id)
+{
+    $bundle = Bundle::with('discounts')->findOrFail($id);
 
-            if (!$shop || !$variant) {
-                return response("Missing shop or variant", 400);
-            }
+    try {
+        $validated = $request->validate([
+            'title' => 'nullable|string|max:255',
+            'bundle_type' => 'required|in:all,specific',
+            'discounts' => 'required|array|min:1',
+            'discounts.*.min_qty' => 'required|integer|min:1',
+            'discounts.*.discount_value' => 'required|numeric|min:0',
+            'products' => 'array'
+        ]);
 
-            $shopModel = Shop::where('shop', $shop)->firstOrFail();
-            $shoptoken = $shopModel->token;
-            $storefrontToken = '9a07bcc664e1ec1f8e6d370b5af6c527';
+        $shop = Shop::where('shop', $request->shop)->firstOrFail();
 
-            // STEP 1: Create a cart with the variant and qty
-          $cartResponse = Http::withHeaders([
-    'X-Shopify-Storefront-Access-Token' => $storefrontToken,
-    'Content-Type' => 'application/json',
-])
-->post("https://{$shop}/api/2025-01/graphql.json", [
-    'query' => '
-        mutation cartCreate($input: CartInput!) {
-          cartCreate(input: $input) {
-            cart {
-              id
-              checkoutUrl
-            }
-            userErrors {
-              field
-              message
-            }
-          }
-        }
-    ',
-    'variables' => [
-        'input' => [
-            'lines' => [
-                [
-                    'merchandiseId' => "gid://shopify/ProductVariant/{$variant}",
-                    'quantity' => (int) $qty,
-                ]
-            ]
-        ]
-    ],
-]);
+        $products = $validated['bundle_type'] === 'specific' ? $validated['products'] : [null];
 
+        // Update bundle for each selected product
+        foreach ($products as $productId) {
+            $bundle->shopify_product_id = $productId;
+            $bundle->title = $validated['title'] ?? '';
+            $bundle->bundle_type = $validated['bundle_type'];
+            $bundle->save();
 
-            if ($cartResponse->failed()) {
-                Log::error("Bundle Checkout Cart Create Failed", [
-                    'shop' => $shop,
-                    'variant' => $variant,
-                    'qty' => $qty,
-                    'response' => $cartResponse->body()
+            // Remove old discounts
+            $bundle->discounts()->delete();
+
+            // Create new discounts
+            foreach ($validated['discounts'] as $discount) {
+                $discountCode = $this->createShopifyDiscount(
+                    $shop->shop,
+                    $shop->token,
+                    $discount['discount_value'],
+                    $discount['min_qty'],
+                    $productId
+                );
+
+                $bundle->discounts()->create([
+                    'min_qty' => $discount['min_qty'],
+                    'discount_value' => $discount['discount_value'],
+                    'shopify_discount_code' => $discountCode
                 ]);
-                return response()->json([
-                    'message' => 'Failed to create cart',
-                    'details' => $cartResponse->json(),
-                ], 400);
             }
-
-            $cartData = $cartResponse->json();
-            
-            $checkoutUrl = $cartData['data']['cartCreate']['cart']['checkoutUrl'] ?? null;
-
-            // STEP 2: Redirect to checkout URL
-            if ($checkoutUrl) {
-                return redirect()->away($checkoutUrl);
-            }
-
-            return response("Checkout URL not found", 500);
-
-        } catch (\Exception $e) {
-            Log::error("Bundle Checkout Error: " . $e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
-                'request' => $request->all()
-            ]);
-            return response("Something went wrong: " . $e->getMessage(), 500);
         }
-    }
 
+        return redirect()->route('bundles.edit', $bundle->id)
+            ->with('success', 'Bundle updated and Shopify discounts updated!');
+
+    } catch (\Exception $e) {
+        Log::error('Bundle Update Error: ' . $e->getMessage(), ['trace'=>$e->getTraceAsString()]);
+        return back()->withInput()->with('error', $e->getMessage());
+    }
+}
+public function destroy($id)
+{
+    try {
+        $bundle = Bundle::with('discounts')->findOrFail($id);
+
+        // Delete related discounts first
+        $bundle->discounts()->delete();
+
+        // Delete the bundle itself
+        $bundle->delete();
+
+        return redirect()->route('bundles.index')
+            ->with('success', 'Bundle deleted successfully!');
+    } catch (\Exception $e) {
+        Log::error('Bundle Delete Error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+        return redirect()->route('bundles.index')
+            ->with('error', 'Failed to delete bundle: ' . $e->getMessage());
+    }
+}
 
 
 
