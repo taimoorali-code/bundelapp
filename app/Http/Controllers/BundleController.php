@@ -186,7 +186,7 @@ public function checkout(Request $request)
                 'qty' => $qty,
                 'response' => $cartResponse->body()
             ]);
-            return response("Failed to create cart", 500);
+            return response("Failed to create cart", $cartResponse->body());
         }
 
         $cartData = $cartResponse->json();
