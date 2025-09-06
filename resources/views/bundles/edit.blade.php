@@ -3,6 +3,10 @@
 @section('title', 'Edit Bundle')
 
 @section('content')
+    <script>
+        const selectedProducts = @json($bundle->shopify_product_id ? [$bundle->shopify_product_id] : []);
+    </script>
+
     <div class="bundle-card">
         <h2 class="mb-4 text-center">Edit Bundle</h2>
 
@@ -54,11 +58,15 @@
                     @foreach ($defaultProducts as $product)
                         <div>
                             <input type="checkbox" name="products[]" value="{{ $product['id'] }}"
-                                {{ $bundle->shopify_product_id == $product['id'] ? 'checked' : '' }}>
+                                {{ in_array($product['id'], $bundle->shopify_product_id ? [$bundle->shopify_product_id] : []) ? 'checked' : '' }}>
                             {{ $product['title'] }}
+                            @if (in_array($product['id'], $bundle->shopify_product_id ? [$bundle->shopify_product_id] : []))
+                                <span class="badge bg-success">Selected</span>
+                            @endif
                         </div>
                     @endforeach
                 </div>
+
 
             </div>
 
@@ -142,43 +150,41 @@
         const productResults = document.getElementById('product-results');
         let timeout = null;
 
-      searchInput.addEventListener('input', () => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => {
-        const query = searchInput.value;
-        const shop = "{{ request('shop') }}";
-        if (query.length < 2) return;
+        searchInput.addEventListener('input', () => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                const query = searchInput.value;
+                const shop = "{{ request('shop') }}";
+                if (query.length < 2) return;
 
-        fetch(`/search-products?q=${query}&shop=${shop}`)
-            .then(res => res.json())
-            .then(data => {
-                let html = '';
+                fetch(`/search-products?q=${query}&shop=${shop}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        let html = '';
 
-                // Add the currently selected product first (if not in results)
-                const currentProductId = {{ $bundle->shopify_product_id ?? 'null' }};
-                let currentIncluded = false;
+                        // Show current selected products first if they are not in search results
+                        const selectedSet = new Set(selectedProducts.map(String));
 
-                data.forEach(p => {
-                    const isChecked = p.id == currentProductId;
-                    if (isChecked) currentIncluded = true;
-                    html += `<div>
+                        data.forEach(p => {
+                            const isChecked = selectedSet.has(p.id.toString());
+                            html += `<div>
                         <input type="checkbox" name="products[]" value="${p.id}" ${isChecked ? 'checked' : ''}>
                         ${p.title} ${isChecked ? '<span class="badge bg-success">Selected</span>' : ''}
                     </div>`;
-                });
+                            selectedSet.delete(p.id.toString()); // remove from set if found
+                        });
 
-                // If the current product is not in search results, show it at top
-                if (currentProductId && !currentIncluded) {
-                    html = `<div>
-                        <input type="checkbox" name="products[]" value="${currentProductId}" checked>
-                        Current Product (ID: ${currentProductId}) <span class="badge bg-success">Selected</span>
+                        // If any selected product not in search results, show at top
+                        selectedSet.forEach(pid => {
+                            html = `<div>
+                        <input type="checkbox" name="products[]" value="${pid}" checked>
+                        Current Product (ID: ${pid}) <span class="badge bg-success">Selected</span>
                     </div>` + html;
-                }
+                        });
 
-                productResults.innerHTML = html;
-            });
-    }, 300);
-});
-
+                        productResults.innerHTML = html;
+                    });
+            }, 300);
+        });
     </script>
 @endsection
