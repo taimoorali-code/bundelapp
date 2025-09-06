@@ -45,21 +45,25 @@ class BundleController extends Controller
     }
 
 
-    public function index(Request $request)
-    {
-        $query = Bundle::with('discounts', 'shop');
-        $shop = $request->query('shop') ?? session('shopify_shop');
+public function index(Request $request)
+{
+    $shopDomain = $request->query('shop') ?? session('shopify_shop');
 
+    $query = Bundle::with('discounts', 'shop');
 
-        // If 'shop' is in the request, filter by it
-        if ($request->has('shop') && !empty($shop)) {
-            $query->where('shop', $shop);
+    if (!empty($shopDomain)) {
+        // Get the shop's ID first
+        $shop = Shop::where('shop', $shopDomain)->first();
+        if ($shop) {
+            $query->where('shop_id', $shop->id);
         }
-
-        $bundles = $query->get();
-
-        return view('bundles.index', compact('bundles'));
     }
+
+    $bundles = $query->get();
+
+    return view('bundles.index', compact('bundles'));
+}
+
 
 
     public function create(Request $request)
