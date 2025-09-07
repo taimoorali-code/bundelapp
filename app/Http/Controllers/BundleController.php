@@ -141,102 +141,57 @@ public function index(Request $request)
     /**
      * Create a Shopify discount code
      */
-    // private function createShopifyDiscount($shop, $token, $discountPercent, $minQty, $productId = null)
-    // {
-    //     $client = new \GuzzleHttp\Client();
+    private function createShopifyDiscount($shop, $token, $discountPercent, $minQty, $productId = null)
+    {
+        $client = new \GuzzleHttp\Client();
 
-    //     // Create Price Rule
-    //     $res = $client->post("https://$shop/admin/api/2025-07/price_rules.json", [
-    //         'headers' => [
-    //             'X-Shopify-Access-Token' => $token,
-    //             'Content-Type' => 'application/json'
-    //         ],
-    //         'body' => json_encode([
-    //             "price_rule" => [
-    //                 "title" => "Bundle " . uniqid(),
-    //                 "target_type" => "line_item",
-    //                 "target_selection" => $productId ? "entitled" : "all",
-    //                 "entitled_product_ids" => $productId ? [$productId] : [],
-    //                 "allocation_method" => "across",
-    //                 "value_type" => "percentage",
-    //                 "value" => -$discountPercent,
-    //                 "customer_selection" => "all",
-    //                 "starts_at" => now()->toIso8601String(),
-    //                 "prerequisite_quantity_range" => [
-    //                     "greater_than_or_equal_to" => $minQty
-    //                 ]
-    //             ]
-    //         ])
-    //     ]);
-
-    //     $priceRuleData = json_decode($res->getBody(), true);
-    //     $priceRuleId = $priceRuleData['price_rule']['id'];
-
-    //     // Create Discount Code
-    //     $res2 = $client->post("https://$shop/admin/api/2025-07/price_rules/$priceRuleId/discount_codes.json", [
-    //         'headers' => [
-    //             'X-Shopify-Access-Token' => $token,
-    //             'Content-Type' => 'application/json'
-    //         ],
-    //         'body' => json_encode([
-    //             'discount_code' => [
-    //                 'code' => 'BUNDLE-' . strtoupper(uniqid())
-    //             ]
-    //         ])
-    //     ]);
-
-    //     $discountData = json_decode($res2->getBody(), true);
-
-    //     return [
-    //         'code' => $discountData['discount_code']['code'],
-    //         'price_rule_id' => $priceRuleId
-    //     ];
-    // }
-/**
- * Create an automatic Shopify discount (no code needed)
- */
-private function createShopifyDiscount($shop, $token, $discountPercent, $minQty, $productId = null)
-{
-    $client = new \GuzzleHttp\Client();
-
-    // Create Price Rule (Automatic Discount)
-    $res = $client->post("https://$shop/admin/api/2025-07/price_rules.json", [
-        'headers' => [
-            'X-Shopify-Access-Token' => $token,
-            'Content-Type' => 'application/json'
-        ],
-        'body' => json_encode([
-            "price_rule" => [
-                "title" => "Bundle " . uniqid(),
-                "target_type" => "line_item",
-                "target_selection" => $productId ? "entitled" : "all",
-                "entitled_product_ids" => $productId ? [$productId] : [],
-                "allocation_method" => "across",
-                "value_type" => "percentage",
-                "value" => -$discountPercent, // Shopify expects negative number for discount
-                "customer_selection" => "all",
-                "starts_at" => now()->toIso8601String(),
-                "prerequisite_quantity_range" => [
-                    "greater_than_or_equal_to" => $minQty
-                ],
-                "once_per_customer" => false,
-                "usage_limit" => null,
-                "combines_with" => [
-                    "order_discounts" => true,
-                    "product_discounts" => true,
-                    "shipping_discounts" => true
+        // Create Price Rule
+        $res = $client->post("https://$shop/admin/api/2025-07/price_rules.json", [
+            'headers' => [
+                'X-Shopify-Access-Token' => $token,
+                'Content-Type' => 'application/json'
+            ],
+            'body' => json_encode([
+                "price_rule" => [
+                    "title" => "Bundle " . uniqid(),
+                    "target_type" => "line_item",
+                    "target_selection" => $productId ? "entitled" : "all",
+                    "entitled_product_ids" => $productId ? [$productId] : [],
+                    "allocation_method" => "across",
+                    "value_type" => "percentage",
+                    "value" => -$discountPercent,
+                    "customer_selection" => "all",
+                    "starts_at" => now()->toIso8601String(),
+                    "prerequisite_quantity_range" => [
+                        "greater_than_or_equal_to" => $minQty
+                    ]
                 ]
-            ]
-        ])
-    ]);
+            ])
+        ]);
 
-    $priceRuleData = json_decode($res->getBody(), true);
+        $priceRuleData = json_decode($res->getBody(), true);
+        $priceRuleId = $priceRuleData['price_rule']['id'];
 
-    return [
-        'price_rule_id' => $priceRuleData['price_rule']['id'],
-        'code' => null // automatic discount has no code
-    ];
-}
+        // Create Discount Code
+        $res2 = $client->post("https://$shop/admin/api/2025-07/price_rules/$priceRuleId/discount_codes.json", [
+            'headers' => [
+                'X-Shopify-Access-Token' => $token,
+                'Content-Type' => 'application/json'
+            ],
+            'body' => json_encode([
+                'discount_code' => [
+                    'code' => 'BUNDLE-' . strtoupper(uniqid())
+                ]
+            ])
+        ]);
+
+        $discountData = json_decode($res2->getBody(), true);
+
+        return [
+            'code' => $discountData['discount_code']['code'],
+            'price_rule_id' => $priceRuleId
+        ];
+    }
 
 
     public function destroy($id)
