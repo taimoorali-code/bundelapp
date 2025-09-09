@@ -13,7 +13,9 @@ class BundleController extends Controller
 
     public function showBundleSetup(Request $request)
     {
-        $shop = $request->query('shop') ?? session('shopify_shop');
+        // $shop = $request->query('shop') ?? session('shopify_shop');
+        $shop = 'amazinggiantflowers.myshopify.com';
+
         $accessToken = Shop::where('shop', $shop)->first()->token;
 
         // Get first 5 products
@@ -29,7 +31,9 @@ class BundleController extends Controller
     // AJAX route for product search
     public function searchProducts(Request $request)
     {
-        $shop = $request->query('shop') ?? session('shopify_shop');
+        // $shop = $request->query('shop') ?? session('shopify_shop');
+        $shop = 'amazinggiantflowers.myshopify.com';
+
         $accessToken = Shop::where('shop', $shop)->first()->token;
         $query = $request->query('q');
 
@@ -47,13 +51,14 @@ class BundleController extends Controller
 
 public function index(Request $request)
 {
-    $shopDomain = $request->query('shop') ?? session('shopify_shop');
+        $shopDomain = 'amazinggiantflowers.myshopify.com';
 
     $query = Bundle::with('discounts', 'shop');
 
     if (!empty($shopDomain)) {
         // Get the shop's ID first
         $shop = Shop::where('shop', $shopDomain)->first();
+
         if ($shop) {
             $query->where('shop_id', $shop->id);
         }
@@ -68,7 +73,9 @@ public function index(Request $request)
 
     public function create(Request $request)
     {
-        $shop = $request->query('shop') ?? session('shopify_shop');
+        // $shop = $request->query('shop') ?? session('shopify_shop');
+                $shop = 'amazinggiantflowers.myshopify.com';
+
         $accessToken = Shop::where('shop', $shop)->first()->token;
 
         // Get first 5 products
@@ -91,7 +98,9 @@ public function index(Request $request)
                 'discounts.*.discount_value' => 'required|numeric|min:0',
                 'products' => 'array'
             ]);
-             $shopdata = $request->query('shop') ?? session('shopify_shop');
+            //  $shopdata = $request->query('shop') ?? session('shopify_shop');
+                     $shopdata = 'amazinggiantflowers.myshopify.com';
+
 
             $shop = Shop::where('shop', $shopdata)->firstOrFail();
 
