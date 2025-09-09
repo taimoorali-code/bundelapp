@@ -86,7 +86,7 @@
             <div class="mb-3">
                 <label for="bundle_type" class="form-label">Apply Bundle To:</label>
                 <select id="bundle_type" class="form-select">
-                    <option value="all" selected>All Products</option>
+                    {{-- <option value="all" selected>All Products</option> --}}
                     <option value="specific">Specific Products</option>
                 </select>
             </div>
