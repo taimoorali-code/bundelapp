@@ -42,10 +42,11 @@ class AuthController extends Controller
     $scopes = 'read_products,write_products,read_discounts,write_discounts,write_price_rules,read_price_rules';
     $redirectUri = route('auth.callback'); // Your /auth/callback route
 
-    $installUrl = "https://{$shop}/admin/oauth/authorize?client_id=" . env('SHOPIFY_API_KEY') .
-                  "&scope={$scopes}" .
-                  "&redirect_uri={$redirectUri}" .
-                  "&state={$state}&grant_options[]=per-user";
+   $installUrl = "https://{$shop}/admin/oauth/authorize?client_id=" . env('SHOPIFY_API_KEY') .
+              "&scope={$scopes}" .
+              "&redirect_uri={$redirectUri}" .
+              "&state={$state}";
+
 
     return redirect($installUrl);
 }
