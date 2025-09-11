@@ -77,7 +77,7 @@ public function index(Request $request)
                 $shop = 'amazinggiantflowers.myshopify.com';
 
         $accessToken = Shop::where('shop', $shop)->first()->token;
-
+        dd($accessToken);
         // Get first 5 products
         $response = Http::withHeaders([
             'X-Shopify-Access-Token' => $accessToken
