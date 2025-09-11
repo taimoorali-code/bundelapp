@@ -91,7 +91,7 @@ public function create(Request $request)
             'status' => $response->status(),
             'body' => $response->body()
         ]);
-        return response()->json(['error' => 'Failed to fetch products'], 500);
+        return response()->json(['error' => 'Failed to fetch products', 'response' => $response->body()], 500);
     }
 
     $data = $response->json();
