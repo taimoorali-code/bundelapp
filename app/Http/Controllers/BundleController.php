@@ -70,23 +70,37 @@ public function index(Request $request)
 }
 
 
+public function create(Request $request)
+{
+    $shop = 'amazinggiantflowers.myshopify.com';
 
-    public function create(Request $request)
-    {
-        // $shop = $request->query('shop') ?? session('shopify_shop');
-                $shop = 'amazinggiantflowers.myshopify.com';
-
-        $accessToken = Shop::where('shop', $shop)->first()->token;
-        dd($accessToken);
-        // Get first 5 products
-        $response = Http::withHeaders([
-            'X-Shopify-Access-Token' => $accessToken
-        ])->get("https://{$shop}/admin/api/2025-01/products.json?limit=5");
-
-        $defaultProducts = $response->json()['products'] ?? [];
-            dd($defaultProducts);
-        return view('bundles.create', compact('defaultProducts'));
+    $shopData = Shop::where('shop', $shop)->first();
+    if (!$shopData) {
+        return response()->json(['error' => 'Shop not found'], 404);
     }
+
+    $accessToken = $shopData->token;
+
+    $response = Http::withHeaders([
+        'X-Shopify-Access-Token' => $accessToken
+    ])->get("https://{$shop}/admin/api/2025-01/products.json?limit=5");
+
+    if ($response->failed()) {
+        // Log response for debugging
+        Log::error('Shopify API Error', [
+            'status' => $response->status(),
+            'body' => $response->body()
+        ]);
+        return response()->json(['error' => 'Failed to fetch products'], 500);
+    }
+
+    $data = $response->json();
+
+    $defaultProducts = $data['products'] ?? [];
+
+    return view('bundles.create', compact('defaultProducts'));
+}
+
     public function store(Request $request)
     {
         try {
