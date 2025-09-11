@@ -84,7 +84,7 @@ public function index(Request $request)
         ])->get("https://{$shop}/admin/api/2025-01/products.json?limit=5");
 
         $defaultProducts = $response->json()['products'] ?? [];
-
+            dd($defaultProducts);
         return view('bundles.create', compact('defaultProducts'));
     }
     public function store(Request $request)
